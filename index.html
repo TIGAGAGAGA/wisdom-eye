@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智慧之眼</title>
+    <title>智慧之眼 - 全局翻页对比</title>
     <style>
         * {
             margin: 0;
@@ -184,16 +184,21 @@
             cursor: pointer;
         }
 
-        /* 步骤4 - 满屏布局 + 新增快速翻页按钮区域 */
+        /* 步骤4 - 满屏布局 + 右侧全局翻页栏 */
+        .step4-wrapper {
+            position: relative;
+            display: flex;
+            gap: 0.8rem;
+            align-items: stretch;
+        }
         .comparison-container {
+            flex: 1;
             display: flex;
             gap: 0.8rem;
             height: calc(100vh - 130px);
-            width: 100%;
-            overflow: hidden;
+            overflow-x: auto;
             background: #0a0a0a;
             border-radius: 20px;
-            position: relative;
         }
         .camera-column {
             flex: 1;
@@ -204,7 +209,7 @@
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.6);
             border: 1px solid #2a2a2a;
-            min-width: 0;
+            min-width: 260px;
         }
         .column-header {
             padding: 0.7rem 1rem;
@@ -239,38 +244,6 @@
             cursor: pointer;
             border: none;
         }
-        /* 新增快速翻页专用按钮样式 (正三角/倒三角) */
-        .nav-arrow-btn {
-            background: #ff7a2f;
-            color: #111;
-            font-weight: bold;
-            font-size: 1.1rem;
-            padding: 0.25rem 0.9rem;
-            border-radius: 40px;
-            min-width: 48px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-            border: none;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-            line-height: 1;
-        }
-        .nav-arrow-btn:hover {
-            background: #ffaa66;
-            transform: scale(1.03);
-        }
-        .nav-arrow-btn:active {
-            transform: scale(0.96);
-        }
-        .quick-nav-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: #1a1a1a;
-            padding: 0.2rem 0.6rem;
-            border-radius: 36px;
-            margin-left: 0.25rem;
-        }
         .image-viewer {
             flex: 1;
             overflow: hidden;
@@ -296,6 +269,64 @@
             pointer-events: none;
             transition: none;
         }
+        /* 右侧全局翻页面板 */
+        .global-nav-panel {
+            width: 70px;
+            background: #111111cc;
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 28px;
+            border: 1px solid #ff7a2f55;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            height: fit-content;
+            align-self: center;
+            padding: 20px 0;
+            z-index: 20;
+        }
+        .global-nav-btn {
+            background: #ff7a2f;
+            border: none;
+            width: 52px;
+            height: 52px;
+            border-radius: 40px;
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #111;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .global-nav-btn:hover:not(:disabled) {
+            background: #ffaa66;
+            transform: scale(1.05);
+        }
+        .global-nav-btn:active {
+            transform: scale(0.96);
+        }
+        .global-nav-btn:disabled {
+            background: #4a4a4a;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .nav-info {
+            font-size: 0.85rem;
+            background: #1e1e1e;
+            padding: 6px 10px;
+            border-radius: 36px;
+            text-align: center;
+            font-weight: bold;
+            color: #ffaa66;
+            margin-top: 8px;
+        }
+
         .step-nav {
             margin-top: 2rem;
             display: flex;
@@ -337,25 +368,28 @@
             .comparison-container {
                 flex-direction: column;
                 height: auto;
-                min-height: 70vh;
+                min-height: 60vh;
             }
             .camera-column {
-                min-height: 400px;
+                min-height: 380px;
             }
             .step-container {
                 padding: 1rem;
+            }
+            .global-nav-panel {
+                width: 60px;
+                padding: 15px 0;
+                gap: 20px;
+            }
+            .global-nav-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 1.6rem;
             }
             .zoom-hint {
                 bottom: 10px;
                 right: 10px;
                 font-size: 10px;
-            }
-            .quick-nav-group {
-                margin-left: 0;
-            }
-            .nav-arrow-btn {
-                padding: 0.2rem 0.7rem;
-                font-size: 1rem;
             }
         }
     </style>
@@ -400,13 +434,21 @@
     </div>
 
     <div id="step4" class="step-container">
-        <h2 class="step-title">🔍 步骤4：图像对比 <span style="font-size:0.9rem; background:#2a2a2a; padding:0.1rem 0.8rem; border-radius:30px;">⬆️⬇️ 快速翻页</span></h2>
-        <div id="comparisonContainer" class="comparison-container"></div>
+        <h2 class="step-title">🔍 步骤4：图像对比 <span style="font-size:0.9rem; background:#2a2a2a; padding:0.1rem 0.8rem; border-radius:30px;">右侧全局翻页</span></h2>
+        <div class="step4-wrapper">
+            <div id="comparisonContainer" class="comparison-container"></div>
+            <!-- 右侧全局翻页栏：正三角 / 倒三角 -->
+            <div class="global-nav-panel">
+                <button class="global-nav-btn" id="globalPrevBtn" title="上一张 (正三角形)">▲</button>
+                <button class="global-nav-btn" id="globalNextBtn" title="下一张 (倒三角形)">▼</button>
+                <div class="nav-info" id="pageIndicator">0/0</div>
+            </div>
+        </div>
         <div class="step-nav" style="margin-top: 16px;">
             <button onclick="backToStep3()">← 返回上传/重新上传</button>
             <button onclick="resetZoomAndPan()" style="background:#3a3a3a;">🔄 重置视图</button>
         </div>
-        <div class="zoom-hint">💡 滚轮缩放 | 拖拽平移 | 右侧三角按钮快速翻页</div>
+        <div class="zoom-hint">💡 滚轮缩放 | 拖拽平移 | 右侧按钮统一翻页 (首尾不可越界)</div>
     </div>
 
     <script>
@@ -598,56 +640,59 @@
             if (nextBtn) nextBtn.disabled = !allHasImages;
         }
 
-        // ========== 获取当前图片 ==========
-        function getCurrentImageForCamera(camera) {
-            const res = state.currentRes;
-            const imgList = camera.images[res];
-            if (imgList && imgList.length > 0) {
-                let safeIndex = Math.min(state.currentImgIndex, imgList.length - 1);
-                if (safeIndex < 0) safeIndex = 0;
-                return imgList[safeIndex];
+        // 获取当前分辨率图片总张数（基于第一个摄像头，因同步索引保证各摄像头在当前分辨率下数量可能不同，取最小值范围？但我们使用同步索引，
+        // 最好取所有摄像头在当前分辨率下的最小张数，避免索引溢出；但为了体验，取第一个摄像头的长度，翻页时不可超出每个摄像头实际存在的张数
+        // 重要: 为了防止越界，每次翻页时校验所有摄像头的实际图片数量，取同步后的newIndex要在每个摄像头的图片范围内。
+        function getCurrentMaxValidIndex() {
+            let minLen = Infinity;
+            for (let cam of state.cameras) {
+                const list = cam.images[state.currentRes];
+                if (list && list.length) minLen = Math.min(minLen, list.length);
+                else minLen = 0;
             }
-            const otherRes = res === '4k' ? '1080p' : '4k';
-            const otherList = camera.images[otherRes];
-            if (otherList && otherList.length) return otherList[0];
-            return null;
+            return minLen === Infinity ? 0 : minLen;
         }
 
-        // 全局翻页函数 (正三角:上一页，倒三角:下一页)
+        // 全局翻页逻辑，遵守边界：第一张无法向上翻页，最后一张无法向下翻页
         function navigateImages(direction) {
             if (!state.cameras.length) return;
-            const currentRes = state.currentRes;
-            // 取第一个摄像头获得图片列表长度 (所有摄像头的图片张数在当前分辨率下保持一致，因为通过同步索引控制)
-            let firstCamera = state.cameras[0];
-            let imgList = firstCamera.images[currentRes];
-            if (!imgList || imgList.length === 0) {
-                // 若当前分辨率无图，尝试切换到有图的分辨率
-                if (state.resolutions['4k'] && firstCamera.images['4k'].length) {
-                    state.currentRes = '4k';
-                    imgList = firstCamera.images['4k'];
-                } else if (state.resolutions['1080p'] && firstCamera.images['1080p'].length) {
-                    state.currentRes = '1080p';
-                    imgList = firstCamera.images['1080p'];
-                } else {
-                    showMessage("无可切换图片", 1000);
+            const res = state.currentRes;
+            // 确定当前分辨率有效图片数量（基于每个摄像头都有图的前提下，取所有摄像头图片数量的最小值确保不越界）
+            let totalImages = getCurrentMaxValidIndex();
+            if (totalImages === 0) {
+                // 尝试检查其他分辨率是否有图
+                let fallbackRes = null;
+                if (state.resolutions['4k'] && state.currentRes !== '4k') fallbackRes = '4k';
+                else if (state.resolutions['1080p'] && state.currentRes !== '1080p') fallbackRes = '1080p';
+                if (fallbackRes) {
+                    state.currentRes = fallbackRes;
+                    totalImages = getCurrentMaxValidIndex();
+                    // 同步分辨率下拉框
+                    syncResolutionSelectors();
+                }
+                if (totalImages === 0) {
+                    showMessage("当前无可用图片", 1000);
                     return;
                 }
             }
-            const totalCount = imgList.length;
-            if (totalCount === 0) {
-                showMessage("当前分辨率无图片", 1000);
-                return;
-            }
+
             let newIndex = state.currentImgIndex;
             if (direction === 'prev') {
+                if (newIndex <= 0) {
+                    showMessage("已是第一张图片", 1000);
+                    return;
+                }
                 newIndex = newIndex - 1;
-                if (newIndex < 0) newIndex = totalCount - 1;
             } else if (direction === 'next') {
+                if (newIndex >= totalImages - 1) {
+                    showMessage("已是最后一张图片", 1000);
+                    return;
+                }
                 newIndex = newIndex + 1;
-                if (newIndex >= totalCount) newIndex = 0;
             }
-            state.currentImgIndex = newIndex;
+            if (newIndex === state.currentImgIndex) return;
 
+            state.currentImgIndex = newIndex;
             // 同步所有摄像头的下拉选择器数值
             const allImgSelects = document.querySelectorAll('.img-selector');
             for (let sel of allImgSelects) {
@@ -655,9 +700,35 @@
                     sel.value = newIndex;
                 }
             }
-            // 刷新所有图像视图
             refreshAllImagesInStep4();
-            showMessage(`📷 第 ${newIndex+1} / ${totalCount} 张`, 800);
+            updatePageIndicator(totalImages);
+            showMessage(`📷 第 ${newIndex+1} / ${totalImages} 张`, 800);
+        }
+
+        function syncResolutionSelectors() {
+            const allResSelects = document.querySelectorAll('.res-selector');
+            allResSelects.forEach(sel => { if (sel.value !== state.currentRes) sel.value = state.currentRes; });
+        }
+
+        function updatePageIndicator(total) {
+            const indicator = document.getElementById('pageIndicator');
+            if (indicator) {
+                if (total && total > 0) {
+                    indicator.innerText = `${state.currentImgIndex+1} / ${total}`;
+                } else {
+                    indicator.innerText = `0 / 0`;
+                }
+            }
+            // 按钮禁用状态(边界视觉反馈)
+            const prevBtn = document.getElementById('globalPrevBtn');
+            const nextBtn = document.getElementById('globalNextBtn');
+            if (prevBtn && nextBtn && total > 0) {
+                prevBtn.disabled = (state.currentImgIndex === 0);
+                nextBtn.disabled = (state.currentImgIndex >= total - 1);
+            } else if (prevBtn && nextBtn) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+            }
         }
 
         function goToStep4() {
@@ -690,7 +761,6 @@
             showMessage("视图已重置 (100% 居中)", 1000);
         }
 
-        // 刷新所有图片src (不重新生成结构)
         function refreshAllImagesInStep4() {
             for (let i = 0; i < state.cameraCount; i++) {
                 const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
@@ -705,6 +775,23 @@
                 }
                 applyTransformToImage(imgEl);
             }
+            // 更新指示器
+            const total = getCurrentMaxValidIndex();
+            updatePageIndicator(total);
+        }
+
+        function getCurrentImageForCamera(camera) {
+            const res = state.currentRes;
+            const imgList = camera.images[res];
+            if (imgList && imgList.length > 0) {
+                let safeIndex = Math.min(state.currentImgIndex, imgList.length - 1);
+                if (safeIndex < 0) safeIndex = 0;
+                return imgList[safeIndex];
+            }
+            const otherRes = res === '4k' ? '1080p' : '4k';
+            const otherList = camera.images[otherRes];
+            if (otherList && otherList.length) return otherList[0];
+            return null;
         }
         
         function renderComparisonView() {
@@ -727,18 +814,12 @@
                 }
                 const column = document.createElement('div');
                 column.className = 'camera-column';
-                // 在右侧区域额外添加翻页控件组（正三角/倒三角），显示在每个摄像头的头部右侧，美观统一
                 column.innerHTML = `
                     <div class="column-header">
                         <h3>${escapeHtml(camera.name)}</h3>
                         <div class="image-controls">
                             ${resOptions.length ? `<select class="control-btn res-selector" data-camidx="${i}">${resOptions}</select>` : ''}
                             <select class="control-btn img-selector" data-camidx="${i}">${imgOptions}</select>
-                            <!-- 新增快速翻页组: 正三角(上一页) + 倒三角(下一页) -->
-                            <div class="quick-nav-group">
-                                <button class="nav-arrow-btn" title="上一张图片 (正序上一页)" data-nav="prev">▲</button>
-                                <button class="nav-arrow-btn" title="下一张图片 (倒序下一页)" data-nav="next">▼</button>
-                            </div>
                         </div>
                     </div>
                     <div class="image-viewer" data-viewer-idx="${i}">
@@ -750,28 +831,6 @@
             
             const allResSelects = document.querySelectorAll('.res-selector');
             const allImgSelects = document.querySelectorAll('.img-selector');
-            const allNavPrevBtns = document.querySelectorAll('.nav-arrow-btn[data-nav="prev"]');
-            const allNavNextBtns = document.querySelectorAll('.nav-arrow-btn[data-nav="next"]');
-            
-            // 绑定全局翻页逻辑 (触发统一翻页)
-            const attachNavEvents = () => {
-                allNavPrevBtns.forEach(btn => {
-                    btn.removeEventListener('click', handlePrevClick);
-                    btn.addEventListener('click', handlePrevClick);
-                });
-                allNavNextBtns.forEach(btn => {
-                    btn.removeEventListener('click', handleNextClick);
-                    btn.addEventListener('click', handleNextClick);
-                });
-            };
-            function handlePrevClick(e) {
-                e.stopPropagation();
-                navigateImages('prev');
-            }
-            function handleNextClick(e) {
-                e.stopPropagation();
-                navigateImages('next');
-            }
             
             const refreshAllImages = () => {
                 for (let i = 0; i < state.cameraCount; i++) {
@@ -787,6 +846,8 @@
                     }
                     applyTransformToImage(imgEl);
                 }
+                const total = getCurrentMaxValidIndex();
+                updatePageIndicator(total);
             };
             
             const rebuildImgSelectors = () => {
@@ -797,9 +858,7 @@
                     if (!selector) continue;
                     if (resImages && resImages.length > 0) {
                         let newOptions = '';
-                        resImages.forEach((img, idx) => {
-                            newOptions += `<option value="${idx}">${escapeHtml(img.name)}</option>`;
-                        });
+                        resImages.forEach((img, idx) => { newOptions += `<option value="${idx}">${escapeHtml(img.name)}</option>`; });
                         selector.innerHTML = newOptions;
                         let safeIdx = Math.min(state.currentImgIndex, resImages.length - 1);
                         if (safeIdx < 0) safeIdx = 0;
@@ -807,13 +866,6 @@
                         state.currentImgIndex = safeIdx;
                     } else {
                         selector.innerHTML = '<option disabled>无图片</option>';
-                        if (i === 0 && (resImages?.length === 0)) state.currentImgIndex = 0;
-                    }
-                }
-                const firstVal = state.currentImgIndex;
-                for (let sel of allImgSelects) {
-                    if (sel.options.length > firstVal && sel.value !== String(firstVal)) {
-                        sel.value = firstVal;
                     }
                 }
                 refreshAllImages();
@@ -825,6 +877,8 @@
                 allResSelects.forEach(sel => { if (sel !== e.target) sel.value = newRes; });
                 state.currentImgIndex = 0;
                 rebuildImgSelectors();
+                const total = getCurrentMaxValidIndex();
+                updatePageIndicator(total);
             };
             
             const onImageIndexChange = (e) => {
@@ -832,48 +886,45 @@
                 if (isNaN(newIdx)) newIdx = 0;
                 state.currentImgIndex = newIdx;
                 for (let sel of allImgSelects) {
-                    if (sel !== e.target && sel.options.length > newIdx) {
-                        sel.value = newIdx;
-                    }
+                    if (sel !== e.target && sel.options.length > newIdx) sel.value = newIdx;
                 }
                 refreshAllImages();
-                showMessage(`切换到第 ${newIdx+1} 张`, 800);
             };
             
             allResSelects.forEach(sel => sel.addEventListener('change', onResolutionChange));
             allImgSelects.forEach(sel => sel.addEventListener('change', onImageIndexChange));
             rebuildImgSelectors();
-            attachNavEvents();
             
             const viewers = document.querySelectorAll('.image-viewer');
             viewers.forEach(viewer => bindCenterZoomAndPan(viewer));
             updateAllImagesTransform();
+            
+            // 绑定右侧全局按钮
+            const prevGlobal = document.getElementById('globalPrevBtn');
+            const nextGlobal = document.getElementById('globalNextBtn');
+            if (prevGlobal) {
+                prevGlobal.onclick = () => navigateImages('prev');
+            }
+            if (nextGlobal) {
+                nextGlobal.onclick = () => navigateImages('next');
+            }
+            const total = getCurrentMaxValidIndex();
+            updatePageIndicator(total);
         }
         
-        // 绑定缩放/拖拽 (以图像中心基准)
         function bindCenterZoomAndPan(viewer) {
-            let isDragging = false;
-            let startX, startY;
-            
+            let isDragging = false, startX, startY;
             const handleWheel = (e) => {
                 e.preventDefault();
-                const delta = e.deltaY;
-                const oldScale = state.syncScale;
-                let newScale;
-                if (delta < 0) {
-                    newScale = oldScale + 0.2;
-                } else {
-                    newScale = oldScale - 0.2;
-                }
+                let newScale = state.syncScale + (e.deltaY < 0 ? 0.2 : -0.2);
                 newScale = Math.min(20.0, Math.max(1.0, newScale));
-                if (Math.abs(newScale - oldScale) < 0.001) return;
-                const ratio = newScale / oldScale;
-                state.syncTranslate.x = state.syncTranslate.x * ratio;
-                state.syncTranslate.y = state.syncTranslate.y * ratio;
+                if (Math.abs(newScale - state.syncScale) < 0.001) return;
+                const ratio = newScale / state.syncScale;
+                state.syncTranslate.x *= ratio;
+                state.syncTranslate.y *= ratio;
                 state.syncScale = newScale;
                 updateAllImagesTransform();
             };
-            
             const onMouseDown = (e) => {
                 isDragging = true;
                 startX = e.clientX - state.syncTranslate.x;
@@ -887,24 +938,17 @@
                 state.syncTranslate.y = e.clientY - startY;
                 updateAllImagesTransform();
             };
-            const onMouseUp = () => {
-                isDragging = false;
-                viewer.style.cursor = 'grab';
-            };
+            const onMouseUp = () => { isDragging = false; viewer.style.cursor = 'grab'; };
             viewer.addEventListener('wheel', handleWheel, { passive: false });
             viewer.addEventListener('mousedown', onMouseDown);
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
-            viewer.addEventListener('dragstart', (e) => e.preventDefault());
             viewer.style.cursor = 'grab';
         }
         
         function applyTransformToImage(imgEl) {
-            if (imgEl) {
-                imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
-            }
+            if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
         }
-        
         function updateAllImagesTransform() {
             document.querySelectorAll('.image-viewer img').forEach(img => applyTransformToImage(img));
         }
