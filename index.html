@@ -449,7 +449,7 @@
             <button onclick="backToStep3()">← 返回上传/重新上传</button>
             <button onclick="resetZoomAndPan()" style="background:#3a3a3a;">🔄 重置视图</button>
         </div>
-        <div class="zoom-hint">💡仔细阅读这一行你会发现阅读这一行没什么作用 </div>
+        <div class="zoom-hint">💡 鼠标滚轮缩放 | 拖拽平移 | 支持 PNG / JPG / BMP / WebP 等格式</div>
     </div>
 
     <script>
@@ -462,6 +462,16 @@
             syncTranslate: { x: 0, y: 0 },
             currentRes: '4k',
             currentImgIndex: 0,
+        };
+
+        // 允许的图片扩展名 (不区分大小写) —— 完全放开限制，仅通过文件类型和扩展名嗅觉
+        const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'tiff', 'avif', 'svg', 'ico']; 
+        const isImageFile = (file) => {
+            // MIME类型宽松判断
+            if (file.type.startsWith('image/')) return true;
+            // 根据扩展名判断
+            const ext = file.name.split('.').pop().toLowerCase();
+            return ALLOWED_EXTENSIONS.includes(ext);
         };
 
         function showMessage(msg, duration = 1500) {
@@ -562,7 +572,7 @@
                         <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
                         <button class="clear-btn" onclick="clearCameraResolution(${i}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>
                     </div>
-                    <input type="file" id="fileInput${i}" multiple accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleFileUpload(${i}, event)">
+                    <input type="file" id="fileInput${i}" multiple accept="image/*" style="display:none" onchange="handleFileUpload(${i}, event)">
                 `;
                 grid.appendChild(card);
             }
@@ -602,6 +612,7 @@
             input.click();
         };
 
+        // 核心修改：放宽文件格式限制，仅拒绝对非图片的提示，但图片皆可上传 (png, bmp, webp, jpg, 甚至gif等)
         window.handleFileUpload = function(cameraIndex, event) {
             const files = event.target.files;
             const resolution = event.target.dataset.resolution;
@@ -609,13 +620,28 @@
             
             const camera = state.cameras[cameraIndex];
             const oldImages = camera.images[resolution];
+            // 释放旧URL内存
             for (let img of oldImages) {
                 if (img.url) URL.revokeObjectURL(img.url);
             }
             const newImages = [];
+            let invalidCount = 0;
             for (let file of files) {
+                // 宽松检测：只要能被浏览器识别为有效图像或者扩展名合理即可，防止crash直接过滤掉完全无效文件
+                if (!isImageFile(file)) {
+                    invalidCount++;
+                    continue;
+                }
                 const url = URL.createObjectURL(file);
                 newImages.push({ name: file.name, url: url });
+            }
+            if (invalidCount > 0) {
+                showMessage(`⚠️ 已过滤 ${invalidCount} 个非图片文件（仅支持PNG/BMP/JPG等）`, 2000);
+            }
+            if (newImages.length === 0 && files.length > 0) {
+                showMessage(`❌ 所选文件中没有有效的图片 (支持 png, bmp, jpg, webp, gif 等)`, 1800);
+                event.target.value = '';
+                return;
             }
             newImages.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
             camera.images[resolution] = newImages;
@@ -628,7 +654,7 @@
             }
             event.target.value = '';
             checkAllUploaded();
-            showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} 已覆盖上传 ${files.length} 张`, 1300);
+            showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} 已上传 ${newImages.length} 张 (支持PNG/BMP等)`, 1500);
         };
 
         function checkAllUploaded() {
@@ -641,9 +667,7 @@
             if (nextBtn) nextBtn.disabled = !allHasImages;
         }
 
-        // 获取当前分辨率图片总张数（基于第一个摄像头，因同步索引保证各摄像头在当前分辨率下数量可能不同，取最小值范围？但我们使用同步索引，
-        // 最好取所有摄像头在当前分辨率下的最小张数，避免索引溢出；但为了体验，取第一个摄像头的长度，翻页时不可超出每个摄像头实际存在的张数
-        // 重要: 为了防止越界，每次翻页时校验所有摄像头的实际图片数量，取同步后的newIndex要在每个摄像头的图片范围内。
+        // 获取当前分辨率下所有摄像头的图片最小张数 (保证翻页不越界)
         function getCurrentMaxValidIndex() {
             let minLen = Infinity;
             for (let cam of state.cameras) {
@@ -654,25 +678,20 @@
             return minLen === Infinity ? 0 : minLen;
         }
 
-        // 全局翻页逻辑，遵守边界：第一张无法向上翻页，最后一张无法向下翻页
         function navigateImages(direction) {
             if (!state.cameras.length) return;
-            const res = state.currentRes;
-            // 确定当前分辨率有效图片数量（基于每个摄像头都有图的前提下，取所有摄像头图片数量的最小值确保不越界）
             let totalImages = getCurrentMaxValidIndex();
             if (totalImages === 0) {
-                // 尝试检查其他分辨率是否有图
                 let fallbackRes = null;
                 if (state.resolutions['4k'] && state.currentRes !== '4k') fallbackRes = '4k';
                 else if (state.resolutions['1080p'] && state.currentRes !== '1080p') fallbackRes = '1080p';
                 if (fallbackRes) {
                     state.currentRes = fallbackRes;
                     totalImages = getCurrentMaxValidIndex();
-                    // 同步分辨率下拉框
                     syncResolutionSelectors();
                 }
                 if (totalImages === 0) {
-                    showMessage("当前无可用图片", 1000);
+                    showMessage("当前分辨率无可用图片，请先上传或切换分辨率", 1200);
                     return;
                 }
             }
@@ -694,7 +713,6 @@
             if (newIndex === state.currentImgIndex) return;
 
             state.currentImgIndex = newIndex;
-            // 同步所有摄像头的下拉选择器数值
             const allImgSelects = document.querySelectorAll('.img-selector');
             for (let sel of allImgSelects) {
                 if (sel.options.length > newIndex) {
@@ -720,7 +738,6 @@
                     indicator.innerText = `0 / 0`;
                 }
             }
-            // 按钮禁用状态(边界视觉反馈)
             const prevBtn = document.getElementById('globalPrevBtn');
             const nextBtn = document.getElementById('globalNextBtn');
             if (prevBtn && nextBtn && total > 0) {
@@ -741,7 +758,7 @@
                 }
             }
             if (!allValid) {
-                alert('❌ 每个摄像头至少需要上传一张图片');
+                alert('❌ 每个摄像头至少需要上传一张图片 (支持png/bmp/jpg等)');
                 return;
             }
             if (!state.resolutions[state.currentRes]) {
@@ -776,7 +793,6 @@
                 }
                 applyTransformToImage(imgEl);
             }
-            // 更新指示器
             const total = getCurrentMaxValidIndex();
             updatePageIndicator(total);
         }
@@ -900,15 +916,10 @@
             viewers.forEach(viewer => bindCenterZoomAndPan(viewer));
             updateAllImagesTransform();
             
-            // 绑定右侧全局按钮
             const prevGlobal = document.getElementById('globalPrevBtn');
             const nextGlobal = document.getElementById('globalNextBtn');
-            if (prevGlobal) {
-                prevGlobal.onclick = () => navigateImages('prev');
-            }
-            if (nextGlobal) {
-                nextGlobal.onclick = () => navigateImages('next');
-            }
+            if (prevGlobal) prevGlobal.onclick = () => navigateImages('prev');
+            if (nextGlobal) nextGlobal.onclick = () => navigateImages('next');
             const total = getCurrentMaxValidIndex();
             updatePageIndicator(total);
         }
