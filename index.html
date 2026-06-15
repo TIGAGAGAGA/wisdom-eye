@@ -449,7 +449,7 @@
             <button onclick="backToStep3()">← 返回上传/重新上传</button>
             <button onclick="resetZoomAndPan()" style="background:#3a3a3a;">🔄 重置视图</button>
         </div>
-        <div class="zoom-hint">💡 鼠标滚轮缩放 | 拖拽平移 | 支持 PNG / JPG / BMP / WebP 等格式</div>
+        <div class="zoom-hint" id="zoomHintText">💡 鼠标滚轮缩放 | 拖拽平移 | 按住Ctrl独立操作单张 | 双击恢复同步</div>
     </div>
 
     <script>
@@ -463,6 +463,25 @@
             currentRes: '4k',
             currentImgIndex: 0,
         };
+
+        // 单个图片独立缩放/平移状态 (keyed by viewer DOM element)
+        // 初始化为当前同步状态值，保证按住Ctrl进入独立模式时画面不跳变
+        const individualStates = new WeakMap();
+
+        function getIndividualState(viewer) {
+            if (!individualStates.has(viewer)) {
+                individualStates.set(viewer, {
+                    scale: state.syncScale,
+                    tx: state.syncTranslate.x,
+                    ty: state.syncTranslate.y
+                });
+            }
+            return individualStates.get(viewer);
+        }
+
+        function isIndividualMode(e) {
+            return e.ctrlKey || e.metaKey;
+        }
 
         // 允许的图片扩展名 (不区分大小写) —— 完全放开限制，仅通过文件类型和扩展名嗅觉
         const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'tiff', 'avif', 'svg', 'ico']; 
@@ -767,6 +786,7 @@
             state.currentImgIndex = 0;
             state.syncScale = 1;
             state.syncTranslate = { x: 0, y: 0 };
+            resetIndividualStates();
             renderComparisonView();
             hideAllSteps();
             document.getElementById('step4').classList.add('active');
@@ -775,11 +795,13 @@
         function resetZoomAndPan() {
             state.syncScale = 1;
             state.syncTranslate = { x: 0, y: 0 };
+            resetIndividualStates();
             updateAllImagesTransform();
             showMessage("视图已重置 (100% 居中)", 1000);
         }
 
         function refreshAllImagesInStep4() {
+            resetIndividualStates();
             for (let i = 0; i < state.cameraCount; i++) {
                 const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
                 if (!viewerDiv) continue;
@@ -926,43 +948,158 @@
         
         function bindCenterZoomAndPan(viewer) {
             let isDragging = false, startX, startY;
+            let dragIndividual = false; // 拖拽开始时是否按住Ctrl
+
             const handleWheel = (e) => {
                 e.preventDefault();
-                let newScale = state.syncScale + (e.deltaY < 0 ? 0.2 : -0.2);
-                newScale = Math.min(20.0, Math.max(1.0, newScale));
-                if (Math.abs(newScale - state.syncScale) < 0.001) return;
-                const ratio = newScale / state.syncScale;
-                state.syncTranslate.x *= ratio;
-                state.syncTranslate.y *= ratio;
-                state.syncScale = newScale;
-                updateAllImagesTransform();
+                if (isIndividualMode(e)) {
+                    // ---- 独立模式：仅缩放当前图片 ----
+                    const st = getIndividualState(viewer);
+                    let newScale = st.scale + (e.deltaY < 0 ? 0.2 : -0.2);
+                    newScale = Math.min(20.0, Math.max(1.0, newScale));
+                    if (Math.abs(newScale - st.scale) < 0.001) return;
+                    const ratio = newScale / st.scale;
+                    st.tx *= ratio;
+                    st.ty *= ratio;
+                    st.scale = newScale;
+                    const imgEl = viewer.querySelector('img');
+                    if (imgEl) {
+                        imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+                    }
+                    showHint('individual');
+                } else {
+                    // ---- 同步模式：缩放所有图片（包括有独立状态的） ----
+                    let newScale = state.syncScale + (e.deltaY < 0 ? 0.2 : -0.2);
+                    newScale = Math.min(20.0, Math.max(1.0, newScale));
+                    if (Math.abs(newScale - state.syncScale) < 0.001) return;
+                    const ratio = newScale / state.syncScale;
+                    state.syncTranslate.x *= ratio;
+                    state.syncTranslate.y *= ratio;
+                    state.syncScale = newScale;
+                    // 同步缩放时，独立状态的图片也等比缩放，保持与同步的相对偏移
+                    document.querySelectorAll('.image-viewer').forEach(v => {
+                        if (individualStates.has(v)) {
+                            const s = individualStates.get(v);
+                            s.scale *= ratio;
+                            s.tx *= ratio;
+                            s.ty *= ratio;
+                        }
+                    });
+                    updateAllImagesTransform();
+                    showHint('sync');
+                }
             };
+
             const onMouseDown = (e) => {
+                if (e.button !== 0) return;
                 isDragging = true;
-                startX = e.clientX - state.syncTranslate.x;
-                startY = e.clientY - state.syncTranslate.y;
+                dragIndividual = isIndividualMode(e);
+                if (dragIndividual) {
+                    const st = getIndividualState(viewer);
+                    startX = e.clientX - st.tx;
+                    startY = e.clientY - st.ty;
+                } else {
+                    startX = e.clientX - state.syncTranslate.x;
+                    startY = e.clientY - state.syncTranslate.y;
+                }
                 viewer.style.cursor = 'grabbing';
                 e.preventDefault();
             };
+
             const onMouseMove = (e) => {
                 if (!isDragging) return;
-                state.syncTranslate.x = e.clientX - startX;
-                state.syncTranslate.y = e.clientY - startY;
-                updateAllImagesTransform();
+                if (dragIndividual) {
+                    const st = getIndividualState(viewer);
+                    st.tx = e.clientX - startX;
+                    st.ty = e.clientY - startY;
+                    const imgEl = viewer.querySelector('img');
+                    if (imgEl) {
+                        imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+                    }
+                } else {
+                    const newTx = e.clientX - startX;
+                    const newTy = e.clientY - startY;
+                    const dx = newTx - state.syncTranslate.x;
+                    const dy = newTy - state.syncTranslate.y;
+                    state.syncTranslate.x = newTx;
+                    state.syncTranslate.y = newTy;
+                    // 同步拖拽时，独立状态的图片也跟随移动
+                    document.querySelectorAll('.image-viewer').forEach(v => {
+                        if (individualStates.has(v)) {
+                            const s = individualStates.get(v);
+                            s.tx += dx;
+                            s.ty += dy;
+                        }
+                    });
+                    updateAllImagesTransform();
+                }
             };
-            const onMouseUp = () => { isDragging = false; viewer.style.cursor = 'grab'; };
+
+            const onMouseUp = () => {
+                isDragging = false;
+                viewer.style.cursor = 'grab';
+            };
+
             viewer.addEventListener('wheel', handleWheel, { passive: false });
             viewer.addEventListener('mousedown', onMouseDown);
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
+            // 双击恢复该图片到同步状态
+            viewer.addEventListener('dblclick', () => {
+                if (individualStates.has(viewer)) {
+                    clearViewerIndividualState(viewer);
+                }
+            });
             viewer.style.cursor = 'grab';
         }
-        
+
         function applyTransformToImage(imgEl) {
             if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
         }
         function updateAllImagesTransform() {
-            document.querySelectorAll('.image-viewer img').forEach(img => applyTransformToImage(img));
+            document.querySelectorAll('.image-viewer').forEach(viewer => {
+                const imgEl = viewer.querySelector('img');
+                if (!imgEl) return;
+                // 如果该图片有独立状态，保持其独立变换，不被同步覆盖
+                if (individualStates.has(viewer)) {
+                    const st = individualStates.get(viewer);
+                    imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+                } else {
+                    applyTransformToImage(imgEl);
+                }
+            });
+        }
+
+        // 重置单个图片的独立状态（在切换分辨率/翻页时调用）
+        function resetIndividualStates() {
+            const viewers = document.querySelectorAll('.image-viewer');
+            viewers.forEach(v => {
+                // 直接删除状态，下次进入独立模式时从同步状态重新初始化
+                individualStates.delete(v);
+            });
+        }
+
+        // 清除指定 viewer 的独立状态，使其回到跟随同步变换
+        function clearViewerIndividualState(viewer) {
+            individualStates.delete(viewer);
+            const imgEl = viewer.querySelector('img');
+            if (imgEl) applyTransformToImage(imgEl);
+            showMessage('已恢复同步', 800);
+        }
+
+        let hintTimeout = null;
+        function showHint(mode) {
+            const el = document.getElementById('zoomHintText');
+            if (!el) return;
+            if (mode === 'individual') {
+                el.textContent = '🔍 独立缩放/平移 (按住Ctrl)';
+            } else {
+                el.textContent = '💡 鼠标滚轮缩放 | 拖拽平移 | 按住Ctrl可独立操作单张图片';
+            }
+            clearTimeout(hintTimeout);
+            hintTimeout = setTimeout(() => {
+                el.textContent = '💡 鼠标滚轮缩放 | 拖拽平移 | 按住Ctrl独立操作单张 | 双击恢复同步';
+            }, 1500);
         }
         
         goToStep1();
