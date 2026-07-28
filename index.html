@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智慧之眼</title>
+    <title>智慧之眼 · 持久化对比</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
         * {
@@ -376,6 +376,25 @@
             font-family: monospace;
             border: 1px solid #ff7a2f44;
         }
+        /* 新增缩放倍率显示 - 悬浮在图片左下角 */
+        .zoom-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            color: #ffaa66;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 30px;
+            border: 1px solid #ff7a2f55;
+            pointer-events: none;
+            z-index: 15;
+            font-family: 'Segoe UI', monospace;
+            letter-spacing: 0.3px;
+            transition: opacity 0.2s;
+        }
         @media (max-width: 800px) {
             .step4-wrapper {
                 flex-direction: column;
@@ -483,16 +502,11 @@
 
         function saveStateToStorage() {
             try {
-                // 提取需要持久化的数据 (避免循环引用)
                 const data = {
                     cameraCount: state.cameraCount,
                     resolutions: state.resolutions,
                     cameras: state.cameras.map(cam => ({
                         name: cam.name,
-                        // 只保存图片的 name 和 url (url 是 blob URL，刷新后失效，需重新从文件重建)
-                        // 但为了刷新后能恢复，我们存储 base64 或文件名? 
-                        // 更好的方式：存储 File 对象? 无法序列化。所以我们存储图片的 base64 数据。
-                        // 因此在上传时，我们把图片转为 base64 存储，同时保留 blob URL 用于显示。
                         images: {
                             '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data })),
                             '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data }))
@@ -514,14 +528,12 @@
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (!raw) return null;
                 const data = JSON.parse(raw);
-                // 恢复图片数据：将 base64 重新转换为 blob URL
                 if (data.cameras) {
                     data.cameras.forEach(cam => {
                         ['4k', '1080p'].forEach(res => {
                             if (cam.images && cam.images[res]) {
                                 cam.images[res] = cam.images[res].map(item => {
                                     if (item.data) {
-                                        // 将 base64 转为 blob URL
                                         const blob = base64ToBlob(item.data);
                                         const url = URL.createObjectURL(blob);
                                         return { name: item.name, url: url, data: item.data };
@@ -541,7 +553,6 @@
             }
         }
 
-        // 辅助: base64 转 Blob
         function base64ToBlob(base64) {
             const parts = base64.split(',');
             const mime = parts[0].match(/:(.*?);/)[1];
@@ -554,7 +565,6 @@
             return new Blob([u8arr], { type: mime });
         }
 
-        // 文件转 base64 (异步)
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -577,7 +587,6 @@
             currentImgIndex: 0,
         };
 
-        // 尝试从存储恢复
         const saved = loadStateFromStorage();
         if (saved) {
             state.cameraCount = saved.cameraCount || 2;
@@ -587,7 +596,6 @@
             state.currentImgIndex = saved.currentImgIndex || 0;
             state.syncScale = saved.syncScale || 1;
             state.syncTranslate = saved.syncTranslate || { x: 0, y: 0 };
-            // 如果恢复后无图片，重置一些状态
             if (state.cameras.length === 0) {
                 state.cameras = [];
                 for (let i = 0; i < state.cameraCount; i++) {
@@ -595,21 +603,17 @@
                 }
             }
         } else {
-            // 初始化 cameras
             for (let i = 0; i < state.cameraCount; i++) {
                 state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
             }
         }
 
-        // 若恢复了图片，需要重新生成 blob URL (在 loadStateFromStorage 中已做)
-        // 但如果是全新状态，确保 images 结构完整
         state.cameras.forEach(cam => {
             if (!cam.images) cam.images = { '4k': [], '1080p': [] };
             if (!cam.images['4k']) cam.images['4k'] = [];
             if (!cam.images['1080p']) cam.images['1080p'] = [];
         });
 
-        // 确保 currentRes 有效
         if (!state.resolutions[state.currentRes]) {
             state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
         }
@@ -658,7 +662,6 @@
         function goToStep1() {
             hideAllSteps();
             document.getElementById('step1').classList.add('active');
-            // 同步输入框值
             document.getElementById('cameraCount').value = state.cameraCount;
         }
 
@@ -669,12 +672,10 @@
                 return;
             }
             state.cameraCount = count;
-            // 重置 cameras 结构
             state.cameras = [];
             for (let i = 0; i < state.cameraCount; i++) {
                 state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
             }
-            // 同步复选框
             document.getElementById('res4k').checked = state.resolutions['4k'];
             document.getElementById('res1080p').checked = state.resolutions['1080p'];
             saveStateToStorage();
@@ -953,6 +954,7 @@
             state.syncTranslate = { x: 0, y: 0 };
             resetIndividualStates();
             updateAllImagesTransform();
+            updateAllZoomIndicators();
             saveStateToStorage();
             showMessage("视图已重置 (100% 居中)", 1000);
         }
@@ -974,6 +976,7 @@
             }
             const total = getCurrentMaxValidIndex();
             updatePageIndicator(total);
+            updateAllZoomIndicators();
         }
 
         function getCurrentImageForCamera(camera) {
@@ -988,6 +991,59 @@
             const otherList = camera.images[otherRes];
             if (otherList && otherList.length) return otherList[0];
             return null;
+        }
+
+        // ---- 更新缩放指示器 ----
+        function updateZoomIndicator(viewer) {
+            let zoom = state.syncScale;
+            if (individualStates.has(viewer)) {
+                zoom = individualStates.get(viewer).scale;
+            }
+            let indicator = viewer.querySelector('.zoom-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'zoom-indicator';
+                viewer.appendChild(indicator);
+            }
+            const percent = Math.round(zoom * 100);
+            indicator.textContent = `🔍 ${percent}%`;
+        }
+
+        function updateAllZoomIndicators() {
+            document.querySelectorAll('.image-viewer').forEach(v => updateZoomIndicator(v));
+        }
+
+        // 在每次变换后调用
+        function updateAllImagesTransform() {
+            document.querySelectorAll('.image-viewer').forEach(viewer => {
+                const imgEl = viewer.querySelector('img');
+                if (!imgEl) return;
+                if (individualStates.has(viewer)) {
+                    const st = individualStates.get(viewer);
+                    imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+                } else {
+                    applyTransformToImage(imgEl);
+                }
+                updateZoomIndicator(viewer);
+            });
+        }
+
+        function applyTransformToImage(imgEl) {
+            if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
+        }
+
+        function resetIndividualStates() {
+            const viewers = document.querySelectorAll('.image-viewer');
+            viewers.forEach(v => individualStates.delete(v));
+        }
+
+        function clearViewerIndividualState(viewer) {
+            individualStates.delete(viewer);
+            const imgEl = viewer.querySelector('img');
+            if (imgEl) applyTransformToImage(imgEl);
+            updateZoomIndicator(viewer);
+            saveStateToStorage();
+            showMessage('已恢复同步', 800);
         }
 
         function renderComparisonView() {
@@ -1044,6 +1100,7 @@
                 }
                 const total = getCurrentMaxValidIndex();
                 updatePageIndicator(total);
+                updateAllZoomIndicators();
                 saveStateToStorage();
             };
 
@@ -1076,6 +1133,7 @@
                 rebuildImgSelectors();
                 const total = getCurrentMaxValidIndex();
                 updatePageIndicator(total);
+                updateAllZoomIndicators();
                 saveStateToStorage();
             };
 
@@ -1097,6 +1155,7 @@
             const viewers = document.querySelectorAll('.image-viewer');
             viewers.forEach(viewer => bindCenterZoomAndPan(viewer));
             updateAllImagesTransform();
+            updateAllZoomIndicators();
 
             const prevGlobal = document.getElementById('globalPrevBtn');
             const nextGlobal = document.getElementById('globalNextBtn');
@@ -1104,13 +1163,10 @@
             if (nextGlobal) nextGlobal.onclick = () => navigateImages('next');
             const total = getCurrentMaxValidIndex();
             updatePageIndicator(total);
-
-            // 恢复缩放和平移状态
-            updateAllImagesTransform();
         }
 
         // ============================================================
-        // 6. 缩放/平移交互 (与之前相同，增加保存)
+        // 6. 缩放/平移交互 (增加指示器更新)
         // ============================================================
         function bindCenterZoomAndPan(viewer) {
             let isDragging = false, startX, startY;
@@ -1131,6 +1187,7 @@
                     if (imgEl) {
                         imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
                     }
+                    updateZoomIndicator(viewer);
                     showHint('individual');
                 } else {
                     let newScale = state.syncScale + (e.deltaY < 0 ? 0.2 : -0.2);
@@ -1149,6 +1206,7 @@
                         }
                     });
                     updateAllImagesTransform();
+                    updateAllZoomIndicators();
                     showHint('sync');
                 }
                 saveStateToStorage();
@@ -1180,6 +1238,7 @@
                     if (imgEl) {
                         imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
                     }
+                    updateZoomIndicator(viewer);
                 } else {
                     const newTx = e.clientX - startX;
                     const newTy = e.clientY - startY;
@@ -1195,6 +1254,7 @@
                         }
                     });
                     updateAllImagesTransform();
+                    updateAllZoomIndicators();
                 }
             };
 
@@ -1218,36 +1278,6 @@
             viewer.style.cursor = 'grab';
         }
 
-        function applyTransformToImage(imgEl) {
-            if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
-        }
-
-        function updateAllImagesTransform() {
-            document.querySelectorAll('.image-viewer').forEach(viewer => {
-                const imgEl = viewer.querySelector('img');
-                if (!imgEl) return;
-                if (individualStates.has(viewer)) {
-                    const st = individualStates.get(viewer);
-                    imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
-                } else {
-                    applyTransformToImage(imgEl);
-                }
-            });
-        }
-
-        function resetIndividualStates() {
-            const viewers = document.querySelectorAll('.image-viewer');
-            viewers.forEach(v => individualStates.delete(v));
-        }
-
-        function clearViewerIndividualState(viewer) {
-            individualStates.delete(viewer);
-            const imgEl = viewer.querySelector('img');
-            if (imgEl) applyTransformToImage(imgEl);
-            saveStateToStorage();
-            showMessage('已恢复同步', 800);
-        }
-
         let hintTimeout = null;
 
         function showHint(mode) {
@@ -1268,7 +1298,6 @@
         // 7. 启动: 根据保存状态跳转到对应步骤
         // ============================================================
         function initApp() {
-            // 如果有保存的图片数据，直接进入步骤4
             let hasImages = false;
             for (let cam of state.cameras) {
                 if (cam.images['4k'].length > 0 || cam.images['1080p'].length > 0) {
@@ -1277,10 +1306,8 @@
                 }
             }
             if (hasImages && state.cameras.length > 0) {
-                // 直接进入步骤4
                 goToStep4();
             } else {
-                // 检查是否有保存的摄像头数量等，进入步骤1或步骤3
                 if (state.cameras.length > 0) {
                     goToStep3();
                 } else {
@@ -1289,21 +1316,18 @@
             }
         }
 
-        // 页面加载时自动恢复
         window.addEventListener('DOMContentLoaded', () => {
-            // 同步复选框状态
             document.getElementById('res4k').checked = state.resolutions['4k'];
             document.getElementById('res1080p').checked = state.resolutions['1080p'];
             document.getElementById('cameraCount').value = state.cameraCount;
             initApp();
         });
 
-        // 页面关闭前保存
         window.addEventListener('beforeunload', () => {
             saveStateToStorage();
         });
 
-        // 暴露给全局
+        // 暴露全局
         window.goToStep1 = goToStep1;
         window.goToStep2 = goToStep2;
         window.goToStep3 = goToStep3;
