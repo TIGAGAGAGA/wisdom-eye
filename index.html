@@ -185,16 +185,15 @@
             cursor: pointer;
         }
 
-        /* ========= 步骤4 - 满屏铺满 ========= */
         .step4-wrapper {
             display: flex;
             gap: 0.6rem;
             align-items: stretch;
-            height: calc(100vh - 130px);    /* 占满视口高度，仅保留标题+底部按钮 */
+            height: calc(100vh - 130px);
             min-height: 480px;
             width: 100%;
-            padding: 0;                     /* 移除内边距，左右无留白 */
-            margin: 0;                     
+            padding: 0;
+            margin: 0;
         }
 
         .comparison-container {
@@ -204,7 +203,7 @@
             overflow-x: auto;
             background: #0a0a0a;
             border-radius: 16px;
-            padding: 0;                    /* 无内边距，紧贴边缘 */
+            padding: 0;
             width: 100%;
         }
 
@@ -217,7 +216,7 @@
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.6);
             border: 1px solid #2a2a2a;
-            min-width: 180px;              /* 保证最小宽度，但会随容器拉伸 */
+            min-width: 180px;
         }
 
         .column-header {
@@ -281,7 +280,6 @@
             transition: none;
         }
 
-        /* 右侧全局翻页面板 — 保持紧凑 */
         .global-nav-panel {
             width: 64px;
             background: #111111cc;
@@ -459,7 +457,6 @@
     </div>
 
     <div id="step4" class="step-container" style="padding: 0.8rem 0.8rem 0.8rem 0.8rem; max-width: 100%;">
-        <!-- 标题区域单独保留，但占位窄一些 -->
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 0.4rem 0.6rem 0.4rem;">
             <h2 class="step-title" style="font-size:1.4rem; margin-bottom:0;">🔍 图像对比 <span style="font-size:0.8rem; background:#2a2a2a; padding:0.1rem 0.8rem; border-radius:30px;">右侧翻页</span></h2>
             <div style="display: flex; gap: 12px;">
@@ -469,7 +466,6 @@
         </div>
         <div class="step4-wrapper">
             <div id="comparisonContainer" class="comparison-container"></div>
-            <!-- 右侧全局翻页栏 -->
             <div class="global-nav-panel">
                 <button class="global-nav-btn" id="globalPrevBtn" title="上一张 (▲)">▲</button>
                 <button class="global-nav-btn" id="globalNextBtn" title="下一张 (▼)">▼</button>
@@ -480,7 +476,97 @@
     </div>
 
     <script>
-        // ========== 全局状态 ==========
+        // ============================================================
+        // 1. 持久化工具：保存/加载状态 (使用 localStorage)
+        // ============================================================
+        const STORAGE_KEY = 'wisdom_eye_state';
+
+        function saveStateToStorage() {
+            try {
+                // 提取需要持久化的数据 (避免循环引用)
+                const data = {
+                    cameraCount: state.cameraCount,
+                    resolutions: state.resolutions,
+                    cameras: state.cameras.map(cam => ({
+                        name: cam.name,
+                        // 只保存图片的 name 和 url (url 是 blob URL，刷新后失效，需重新从文件重建)
+                        // 但为了刷新后能恢复，我们存储 base64 或文件名? 
+                        // 更好的方式：存储 File 对象? 无法序列化。所以我们存储图片的 base64 数据。
+                        // 因此在上传时，我们把图片转为 base64 存储，同时保留 blob URL 用于显示。
+                        images: {
+                            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data })),
+                            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data }))
+                        }
+                    })),
+                    currentRes: state.currentRes,
+                    currentImgIndex: state.currentImgIndex,
+                    syncScale: state.syncScale,
+                    syncTranslate: state.syncTranslate,
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('保存状态失败:', e);
+            }
+        }
+
+        function loadStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                // 恢复图片数据：将 base64 重新转换为 blob URL
+                if (data.cameras) {
+                    data.cameras.forEach(cam => {
+                        ['4k', '1080p'].forEach(res => {
+                            if (cam.images && cam.images[res]) {
+                                cam.images[res] = cam.images[res].map(item => {
+                                    if (item.data) {
+                                        // 将 base64 转为 blob URL
+                                        const blob = base64ToBlob(item.data);
+                                        const url = URL.createObjectURL(blob);
+                                        return { name: item.name, url: url, data: item.data };
+                                    }
+                                    return { name: item.name, url: '', data: null };
+                                });
+                            } else {
+                                cam.images[res] = [];
+                            }
+                        });
+                    });
+                }
+                return data;
+            } catch (e) {
+                console.warn('加载状态失败:', e);
+                return null;
+            }
+        }
+
+        // 辅助: base64 转 Blob
+        function base64ToBlob(base64) {
+            const parts = base64.split(',');
+            const mime = parts[0].match(/:(.*?);/)[1];
+            const bstr = atob(parts[1]);
+            const n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            for (let i = 0; i < n; i++) {
+                u8arr[i] = bstr.charCodeAt(i);
+            }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        // 文件转 base64 (异步)
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ============================================================
+        // 2. 全局状态
+        // ============================================================
         const state = {
             cameraCount: 2,
             resolutions: { '4k': true, '1080p': true },
@@ -490,6 +576,43 @@
             currentRes: '4k',
             currentImgIndex: 0,
         };
+
+        // 尝试从存储恢复
+        const saved = loadStateFromStorage();
+        if (saved) {
+            state.cameraCount = saved.cameraCount || 2;
+            state.resolutions = saved.resolutions || { '4k': true, '1080p': true };
+            state.cameras = saved.cameras || [];
+            state.currentRes = saved.currentRes || '4k';
+            state.currentImgIndex = saved.currentImgIndex || 0;
+            state.syncScale = saved.syncScale || 1;
+            state.syncTranslate = saved.syncTranslate || { x: 0, y: 0 };
+            // 如果恢复后无图片，重置一些状态
+            if (state.cameras.length === 0) {
+                state.cameras = [];
+                for (let i = 0; i < state.cameraCount; i++) {
+                    state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
+                }
+            }
+        } else {
+            // 初始化 cameras
+            for (let i = 0; i < state.cameraCount; i++) {
+                state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
+            }
+        }
+
+        // 若恢复了图片，需要重新生成 blob URL (在 loadStateFromStorage 中已做)
+        // 但如果是全新状态，确保 images 结构完整
+        state.cameras.forEach(cam => {
+            if (!cam.images) cam.images = { '4k': [], '1080p': [] };
+            if (!cam.images['4k']) cam.images['4k'] = [];
+            if (!cam.images['1080p']) cam.images['1080p'] = [];
+        });
+
+        // 确保 currentRes 有效
+        if (!state.resolutions[state.currentRes]) {
+            state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+        }
 
         const individualStates = new WeakMap();
 
@@ -508,7 +631,7 @@
             return e.ctrlKey || e.metaKey;
         }
 
-        const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'tiff', 'avif', 'svg', 'ico']; 
+        const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'tiff', 'avif', 'svg', 'ico'];
         const isImageFile = (file) => {
             if (file.type.startsWith('image/')) return true;
             const ext = file.name.split('.').pop().toLowerCase();
@@ -517,7 +640,7 @@
 
         function showMessage(msg, duration = 1500) {
             let toast = document.querySelector('.toast-msg');
-            if(toast) toast.remove();
+            if (toast) toast.remove();
             let div = document.createElement('div');
             div.className = 'toast-msg';
             div.innerText = msg;
@@ -529,18 +652,32 @@
             document.querySelectorAll('.step-container').forEach(step => step.classList.remove('active'));
         }
 
+        // ============================================================
+        // 3. 步骤导航 (自动保存)
+        // ============================================================
         function goToStep1() {
             hideAllSteps();
             document.getElementById('step1').classList.add('active');
+            // 同步输入框值
+            document.getElementById('cameraCount').value = state.cameraCount;
         }
 
         function goToStep2() {
             let count = parseInt(document.getElementById('cameraCount').value);
-            if(isNaN(count) || count < 1 || count > 10) {
+            if (isNaN(count) || count < 1 || count > 10) {
                 alert('请输入1-10之间的摄像头数量');
                 return;
             }
             state.cameraCount = count;
+            // 重置 cameras 结构
+            state.cameras = [];
+            for (let i = 0; i < state.cameraCount; i++) {
+                state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
+            }
+            // 同步复选框
+            document.getElementById('res4k').checked = state.resolutions['4k'];
+            document.getElementById('res1080p').checked = state.resolutions['1080p'];
+            saveStateToStorage();
             hideAllSteps();
             document.getElementById('step2').classList.add('active');
         }
@@ -554,20 +691,13 @@
             }
             state.resolutions['4k'] = res4k;
             state.resolutions['1080p'] = res1080p;
-
-            state.cameras = [];
-            for (let i = 0; i < state.cameraCount; i++) {
-                state.cameras.push({
-                    name: `摄像头${i+1}`,
-                    images: { '4k': [], '1080p': [] }
-                });
+            if (!state.resolutions[state.currentRes]) {
+                state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
             }
             state.syncScale = 1;
             state.syncTranslate = { x: 0, y: 0 };
             state.currentImgIndex = 0;
-            if(state.resolutions['4k']) state.currentRes = '4k';
-            else if(state.resolutions['1080p']) state.currentRes = '1080p';
-            
+            saveStateToStorage();
             renderCameraGrid();
             hideAllSteps();
             document.getElementById('step3').classList.add('active');
@@ -579,12 +709,39 @@
             document.getElementById('step3').classList.add('active');
         }
 
+        function goToStep4() {
+            let allValid = true;
+            for (let cam of state.cameras) {
+                let total = cam.images['4k'].length + cam.images['1080p'].length;
+                if (total === 0) { allValid = false; break; }
+            }
+            if (!allValid) {
+                alert('❌ 每个摄像头至少需要上传一张图片');
+                return;
+            }
+            if (!state.resolutions[state.currentRes]) {
+                state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+            }
+            state.currentImgIndex = 0;
+            state.syncScale = 1;
+            state.syncTranslate = { x: 0, y: 0 };
+            resetIndividualStates();
+            saveStateToStorage();
+            renderComparisonView();
+            hideAllSteps();
+            document.getElementById('step4').classList.add('active');
+        }
+
+        // ============================================================
+        // 4. 摄像头配置 & 图片上传 (带持久化)
+        // ============================================================
         function clearResolutionImages(camera, resolution) {
             const imgArray = camera.images[resolution];
             for (let img of imgArray) {
                 if (img.url) URL.revokeObjectURL(img.url);
             }
             camera.images[resolution] = [];
+            saveStateToStorage();
         }
 
         function renderCameraGrid() {
@@ -630,21 +787,23 @@
                     <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
                     <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>`;
             }
+            saveStateToStorage();
             checkAllUploaded();
             showMessage(`已清空 ${resolution.toUpperCase()} 图片`, 1000);
         };
 
         function escapeHtml(str) {
             return String(str).replace(/[&<>]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
                 return m;
             });
         }
 
         window.updateCameraName = function(index, name) {
             state.cameras[index].name = name;
+            saveStateToStorage();
         };
 
         window.triggerUpload = function(cameraIndex, resolution) {
@@ -653,16 +812,17 @@
             input.click();
         };
 
-        window.handleFileUpload = function(cameraIndex, event) {
+        window.handleFileUpload = async function(cameraIndex, event) {
             const files = event.target.files;
             const resolution = event.target.dataset.resolution;
             if (!files || files.length === 0) return;
-            
+
             const camera = state.cameras[cameraIndex];
             const oldImages = camera.images[resolution];
             for (let img of oldImages) {
                 if (img.url) URL.revokeObjectURL(img.url);
             }
+
             const newImages = [];
             let invalidCount = 0;
             for (let file of files) {
@@ -670,8 +830,13 @@
                     invalidCount++;
                     continue;
                 }
-                const url = URL.createObjectURL(file);
-                newImages.push({ name: file.name, url: url });
+                try {
+                    const base64 = await fileToBase64(file);
+                    const url = URL.createObjectURL(file);
+                    newImages.push({ name: file.name, url: url, data: base64 });
+                } catch (e) {
+                    console.warn('读取文件失败:', file.name, e);
+                }
             }
             if (invalidCount > 0) {
                 showMessage(`⚠️ 已过滤 ${invalidCount} 个非图片文件`, 2000);
@@ -681,9 +846,10 @@
                 event.target.value = '';
                 return;
             }
-            newImages.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+            newImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
             camera.images[resolution] = newImages;
-            
+            saveStateToStorage();
+
             const statsDiv = document.getElementById(`stats_${cameraIndex}`);
             if (statsDiv) {
                 statsDiv.innerHTML = `🖼️ 4K: ${camera.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${camera.images['1080p'].length} 张
@@ -705,6 +871,9 @@
             if (nextBtn) nextBtn.disabled = !allHasImages;
         }
 
+        // ============================================================
+        // 5. 对比视图 (步骤4)
+        // ============================================================
         function getCurrentMaxValidIndex() {
             let minLen = Infinity;
             for (let cam of state.cameras) {
@@ -735,26 +904,19 @@
 
             let newIndex = state.currentImgIndex;
             if (direction === 'prev') {
-                if (newIndex <= 0) {
-                    showMessage("已是第一张图片", 1000);
-                    return;
-                }
+                if (newIndex <= 0) { showMessage("已是第一张图片", 1000); return; }
                 newIndex = newIndex - 1;
             } else if (direction === 'next') {
-                if (newIndex >= totalImages - 1) {
-                    showMessage("已是最后一张图片", 1000);
-                    return;
-                }
+                if (newIndex >= totalImages - 1) { showMessage("已是最后一张图片", 1000); return; }
                 newIndex = newIndex + 1;
             }
             if (newIndex === state.currentImgIndex) return;
 
             state.currentImgIndex = newIndex;
+            saveStateToStorage();
             const allImgSelects = document.querySelectorAll('.img-selector');
             for (let sel of allImgSelects) {
-                if (sel.options.length > newIndex) {
-                    sel.value = newIndex;
-                }
+                if (sel.options.length > newIndex) sel.value = newIndex;
             }
             refreshAllImagesInStep4();
             updatePageIndicator(totalImages);
@@ -786,35 +948,12 @@
             }
         }
 
-        function goToStep4() {
-            let allValid = true;
-            for (let cam of state.cameras) {
-                if (cam.images['4k'].length + cam.images['1080p'].length === 0) {
-                    allValid = false;
-                    break;
-                }
-            }
-            if (!allValid) {
-                alert('❌ 每个摄像头至少需要上传一张图片');
-                return;
-            }
-            if (!state.resolutions[state.currentRes]) {
-                state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
-            }
-            state.currentImgIndex = 0;
-            state.syncScale = 1;
-            state.syncTranslate = { x: 0, y: 0 };
-            resetIndividualStates();
-            renderComparisonView();
-            hideAllSteps();
-            document.getElementById('step4').classList.add('active');
-        }
-        
         function resetZoomAndPan() {
             state.syncScale = 1;
             state.syncTranslate = { x: 0, y: 0 };
             resetIndividualStates();
             updateAllImagesTransform();
+            saveStateToStorage();
             showMessage("视图已重置 (100% 居中)", 1000);
         }
 
@@ -850,16 +989,16 @@
             if (otherList && otherList.length) return otherList[0];
             return null;
         }
-        
+
         function renderComparisonView() {
             const container = document.getElementById('comparisonContainer');
             container.innerHTML = '';
             if (state.cameraCount === 0) return;
-            
+
             let resOptions = '';
             if (state.resolutions['4k']) resOptions += `<option value="4k">4K</option>`;
             if (state.resolutions['1080p']) resOptions += `<option value="1080p">1080P</option>`;
-            
+
             for (let i = 0; i < state.cameraCount; i++) {
                 const camera = state.cameras[i];
                 const currentResImgs = camera.images[state.currentRes];
@@ -885,10 +1024,10 @@
                 `;
                 container.appendChild(column);
             }
-            
+
             const allResSelects = document.querySelectorAll('.res-selector');
             const allImgSelects = document.querySelectorAll('.img-selector');
-            
+
             const refreshAllImages = () => {
                 for (let i = 0; i < state.cameraCount; i++) {
                     const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
@@ -905,8 +1044,9 @@
                 }
                 const total = getCurrentMaxValidIndex();
                 updatePageIndicator(total);
+                saveStateToStorage();
             };
-            
+
             const rebuildImgSelectors = () => {
                 for (let i = 0; i < state.cameraCount; i++) {
                     const camera = state.cameras[i];
@@ -927,7 +1067,7 @@
                 }
                 refreshAllImages();
             };
-            
+
             const onResolutionChange = (e) => {
                 const newRes = e.target.value;
                 state.currentRes = newRes;
@@ -936,8 +1076,9 @@
                 rebuildImgSelectors();
                 const total = getCurrentMaxValidIndex();
                 updatePageIndicator(total);
+                saveStateToStorage();
             };
-            
+
             const onImageIndexChange = (e) => {
                 let newIdx = parseInt(e.target.value);
                 if (isNaN(newIdx)) newIdx = 0;
@@ -946,24 +1087,31 @@
                     if (sel !== e.target && sel.options.length > newIdx) sel.value = newIdx;
                 }
                 refreshAllImages();
+                saveStateToStorage();
             };
-            
+
             allResSelects.forEach(sel => sel.addEventListener('change', onResolutionChange));
             allImgSelects.forEach(sel => sel.addEventListener('change', onImageIndexChange));
             rebuildImgSelectors();
-            
+
             const viewers = document.querySelectorAll('.image-viewer');
             viewers.forEach(viewer => bindCenterZoomAndPan(viewer));
             updateAllImagesTransform();
-            
+
             const prevGlobal = document.getElementById('globalPrevBtn');
             const nextGlobal = document.getElementById('globalNextBtn');
             if (prevGlobal) prevGlobal.onclick = () => navigateImages('prev');
             if (nextGlobal) nextGlobal.onclick = () => navigateImages('next');
             const total = getCurrentMaxValidIndex();
             updatePageIndicator(total);
+
+            // 恢复缩放和平移状态
+            updateAllImagesTransform();
         }
-        
+
+        // ============================================================
+        // 6. 缩放/平移交互 (与之前相同，增加保存)
+        // ============================================================
         function bindCenterZoomAndPan(viewer) {
             let isDragging = false, startX, startY;
             let dragIndividual = false;
@@ -1003,6 +1151,7 @@
                     updateAllImagesTransform();
                     showHint('sync');
                 }
+                saveStateToStorage();
             };
 
             const onMouseDown = (e) => {
@@ -1050,8 +1199,11 @@
             };
 
             const onMouseUp = () => {
-                isDragging = false;
-                viewer.style.cursor = 'grab';
+                if (isDragging) {
+                    isDragging = false;
+                    viewer.style.cursor = 'grab';
+                    saveStateToStorage();
+                }
             };
 
             viewer.addEventListener('wheel', handleWheel, { passive: false });
@@ -1069,6 +1221,7 @@
         function applyTransformToImage(imgEl) {
             if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
         }
+
         function updateAllImagesTransform() {
             document.querySelectorAll('.image-viewer').forEach(viewer => {
                 const imgEl = viewer.querySelector('img');
@@ -1091,10 +1244,12 @@
             individualStates.delete(viewer);
             const imgEl = viewer.querySelector('img');
             if (imgEl) applyTransformToImage(imgEl);
+            saveStateToStorage();
             showMessage('已恢复同步', 800);
         }
 
         let hintTimeout = null;
+
         function showHint(mode) {
             const el = document.getElementById('zoomHintText');
             if (!el) return;
@@ -1108,8 +1263,54 @@
                 el.textContent = '💡 滚轮缩放 · 拖拽平移 · Ctrl独立操作 · 双击恢复同步';
             }, 1500);
         }
-        
-        goToStep1();
+
+        // ============================================================
+        // 7. 启动: 根据保存状态跳转到对应步骤
+        // ============================================================
+        function initApp() {
+            // 如果有保存的图片数据，直接进入步骤4
+            let hasImages = false;
+            for (let cam of state.cameras) {
+                if (cam.images['4k'].length > 0 || cam.images['1080p'].length > 0) {
+                    hasImages = true;
+                    break;
+                }
+            }
+            if (hasImages && state.cameras.length > 0) {
+                // 直接进入步骤4
+                goToStep4();
+            } else {
+                // 检查是否有保存的摄像头数量等，进入步骤1或步骤3
+                if (state.cameras.length > 0) {
+                    goToStep3();
+                } else {
+                    goToStep1();
+                }
+            }
+        }
+
+        // 页面加载时自动恢复
+        window.addEventListener('DOMContentLoaded', () => {
+            // 同步复选框状态
+            document.getElementById('res4k').checked = state.resolutions['4k'];
+            document.getElementById('res1080p').checked = state.resolutions['1080p'];
+            document.getElementById('cameraCount').value = state.cameraCount;
+            initApp();
+        });
+
+        // 页面关闭前保存
+        window.addEventListener('beforeunload', () => {
+            saveStateToStorage();
+        });
+
+        // 暴露给全局
+        window.goToStep1 = goToStep1;
+        window.goToStep2 = goToStep2;
+        window.goToStep3 = goToStep3;
+        window.goToStep4 = goToStep4;
+        window.backToStep3 = backToStep3;
+        window.resetZoomAndPan = resetZoomAndPan;
+        window.navigateImages = navigateImages;
     </script>
 </body>
 </html>
