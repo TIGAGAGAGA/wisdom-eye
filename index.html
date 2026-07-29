@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智慧之眼 · 持久化对比</title>
+    <title>智慧之眼</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
         * {
@@ -167,6 +167,26 @@
             color: #5a5a5a;
             cursor: not-allowed;
         }
+        /* 追加按钮样式 */
+        .append-btn {
+            background: #2a5a7a;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+            border-radius: 30px;
+            cursor: pointer;
+            border: none;
+            margin-left: 0.3rem;
+        }
+        .append-btn:hover:not(:disabled) {
+            background: #3a7aaa;
+        }
+        .append-btn:disabled {
+            background: #3a3a3a;
+            color: #666;
+            cursor: not-allowed;
+        }
+
         .image-stats {
             margin-top: 0.8rem;
             font-size: 0.8rem;
@@ -174,13 +194,17 @@
             padding: 0.5rem;
             border-radius: 12px;
             border-left: 3px solid #ff7a2f;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.3rem;
         }
         .clear-btn {
             background: #3a3a3a;
             color: #ffaa66;
             font-size: 0.7rem;
             padding: 0.2rem 0.5rem;
-            margin-left: 0.5rem;
+            margin-left: 0.3rem;
             border-radius: 30px;
             cursor: pointer;
         }
@@ -376,7 +400,6 @@
             font-family: monospace;
             border: 1px solid #ff7a2f44;
         }
-        /* 新增缩放倍率显示 - 悬浮在图片左下角 */
         .zoom-indicator {
             position: absolute;
             bottom: 8px;
@@ -752,6 +775,7 @@
                 const cam = state.cameras[i];
                 const card = document.createElement('div');
                 card.className = 'camera-card';
+                // 为每个摄像头生成两个 file input: 一个用于覆盖上传，一个用于追加
                 card.innerHTML = `
                     <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" onchange="updateCameraName(${i}, this.value)">
                     <div class="resolution-status">
@@ -761,13 +785,21 @@
                     <div class="upload-buttons">
                         <button class="upload-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" 
                             ${!state.resolutions['4k'] ? 'disabled' : ''} 
-                            onclick="triggerUpload(${i}, '4k')">📤 上传4K</button>
+                            onclick="triggerUpload(${i}, '4k', false)">📤 上传4K</button>
                         <button class="upload-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" 
                             ${!state.resolutions['1080p'] ? 'disabled' : ''} 
-                            onclick="triggerUpload(${i}, '1080p')">📤 上传1080P</button>
+                            onclick="triggerUpload(${i}, '1080p', false)">📤 上传1080P</button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin: 0.3rem 0;">
+                        <button class="append-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" 
+                            ${!state.resolutions['4k'] ? 'disabled' : ''} 
+                            onclick="triggerUpload(${i}, '4k', true)">➕ 追加4K</button>
+                        <button class="append-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" 
+                            ${!state.resolutions['1080p'] ? 'disabled' : ''} 
+                            onclick="triggerUpload(${i}, '1080p', true)">➕ 追加1080P</button>
                     </div>
                     <div class="image-stats" id="stats_${i}">
-                        🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张
+                        <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
                         <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
                         <button class="clear-btn" onclick="clearCameraResolution(${i}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>
                     </div>
@@ -782,16 +814,23 @@
             const cam = state.cameras[camIdx];
             if (!cam) return;
             clearResolutionImages(cam, resolution);
-            const statsDiv = document.getElementById(`stats_${camIdx}`);
-            if (statsDiv) {
-                statsDiv.innerHTML = `🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张
-                    <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
-                    <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>`;
-            }
+            updateStatsDisplay(camIdx);
             saveStateToStorage();
             checkAllUploaded();
             showMessage(`已清空 ${resolution.toUpperCase()} 图片`, 1000);
         };
+
+        function updateStatsDisplay(camIdx) {
+            const cam = state.cameras[camIdx];
+            const statsDiv = document.getElementById(`stats_${camIdx}`);
+            if (statsDiv) {
+                statsDiv.innerHTML = `
+                    <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
+                    <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
+                    <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>
+                `;
+            }
+        }
 
         function escapeHtml(str) {
             return String(str).replace(/[&<>]/g, function(m) {
@@ -807,21 +846,29 @@
             saveStateToStorage();
         };
 
-        window.triggerUpload = function(cameraIndex, resolution) {
+        // triggerUpload 增加 append 参数: false=覆盖(清空后上传), true=追加
+        window.triggerUpload = function(cameraIndex, resolution, append) {
             const input = document.getElementById(`fileInput${cameraIndex}`);
             input.dataset.resolution = resolution;
+            input.dataset.append = append ? 'true' : 'false';
             input.click();
         };
 
         window.handleFileUpload = async function(cameraIndex, event) {
             const files = event.target.files;
             const resolution = event.target.dataset.resolution;
+            const append = event.target.dataset.append === 'true';
             if (!files || files.length === 0) return;
 
             const camera = state.cameras[cameraIndex];
-            const oldImages = camera.images[resolution];
-            for (let img of oldImages) {
-                if (img.url) URL.revokeObjectURL(img.url);
+            
+            // 如果不是追加模式，清空原有图片
+            if (!append) {
+                const oldImages = camera.images[resolution];
+                for (let img of oldImages) {
+                    if (img.url) URL.revokeObjectURL(img.url);
+                }
+                camera.images[resolution] = [];
             }
 
             const newImages = [];
@@ -847,19 +894,18 @@
                 event.target.value = '';
                 return;
             }
-            newImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-            camera.images[resolution] = newImages;
+            // 合并已有图片和新图片，并排序
+            const existing = camera.images[resolution] || [];
+            const combined = [...existing, ...newImages];
+            combined.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+            camera.images[resolution] = combined;
             saveStateToStorage();
 
-            const statsDiv = document.getElementById(`stats_${cameraIndex}`);
-            if (statsDiv) {
-                statsDiv.innerHTML = `🖼️ 4K: ${camera.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${camera.images['1080p'].length} 张
-                    <button class="clear-btn" onclick="clearCameraResolution(${cameraIndex}, '4k')" ${!state.resolutions['4k'] || camera.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
-                    <button class="clear-btn" onclick="clearCameraResolution(${cameraIndex}, '1080p')" ${!state.resolutions['1080p'] || camera.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>`;
-            }
+            updateStatsDisplay(cameraIndex);
             event.target.value = '';
             checkAllUploaded();
-            showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} 已上传 ${newImages.length} 张`, 1500);
+            const action = append ? '追加' : '上传';
+            showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} ${action} ${newImages.length} 张 (共${combined.length}张)`, 1500);
         };
 
         function checkAllUploaded() {
@@ -993,7 +1039,6 @@
             return null;
         }
 
-        // ---- 更新缩放指示器 ----
         function updateZoomIndicator(viewer) {
             let zoom = state.syncScale;
             if (individualStates.has(viewer)) {
@@ -1013,7 +1058,6 @@
             document.querySelectorAll('.image-viewer').forEach(v => updateZoomIndicator(v));
         }
 
-        // 在每次变换后调用
         function updateAllImagesTransform() {
             document.querySelectorAll('.image-viewer').forEach(viewer => {
                 const imgEl = viewer.querySelector('img');
