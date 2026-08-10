@@ -1,1652 +1,1238 @@
 <!DOCTYPE html>
-<!-- saved from url=(0040)https://tigagagaga.github.io/wisdom-eye/ -->
-<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智慧之眼</title>
-    <link rel="icon" type="image/png" href="https://tigagagaga.github.io/wisdom-eye/favicon.png">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>智慧之眼</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVDhPpZM7S8NQGMbPcWrFVhQc7KIgLp2E6uTgJhQ3F/Eb+A2ELI4dOji5axcHXRy6iXS1gx1EtDhK61tqW9M0TdPcS+MHSdMTLvzwvve+POecXAL/rULpdrvBUCgUyrIsMYo8z1uNRqPNsiyyWq1W9rLfHhAIBMBut4u1Wi1qMpk0QByNRjYQdkwmk0RHRJxfq1UCgDgdHR2NhsNhvNfrEfB6vdq4Wq02GXby+XwQl8/Hr9frrRiW5VylUkkL+Hw+aDab9LXf7+ONcWx3u10iH8vUajUF7Ha7Uq/XKcHpdKLv9zscp9O5ysspVk4UCoXw8/F6vb/RoWFZ1rjt1eFwWHieZ3MYCAQIn6vV6uM9z3NqkWg0arTb7eW9SqWqa/F4XJctp2KxGFerVSqXy5pEImFLp9PbiJfLpazFYlEulcof9mNWfBrBzLpcLgeiKG6p+u8B+QY+i1AdP5SypgAAAABJRU5ErkJggg==">
+  <style>
+    /* 全局重置 & 基础 */
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .step-container {
+      display: none;
+      padding: 1.8rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      animation: fadeIn 0.2s ease;
+    }
+    .step-container.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        body {
-            background-color: #0a0a0a;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+    /* 标题 */
+    .step-title {
+      font-size: 1.8rem;
+      margin-bottom: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #ff9a3c, #ff5e00);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      display: inline-block;
+    }
+    .form-group { margin-bottom: 2rem; }
+    label { display: block; margin-bottom: 0.6rem; font-weight: 500; color: #bbb; }
 
-        .step-container {
-            display: none;
-            padding: 1.8rem;
-            max-width: 1600px;
-            margin: 0 auto;
-            animation: fadeIn 0.2s ease;
-        }
+    input, select, button {
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      transition: 0.2s;
+      background: #1e1e1e;
+      color: #e0e0e0;
+    }
+    button {
+      background: #ff7a2f;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    button:disabled {
+      background: #4a4a4a;
+      color: #888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    button:hover:not(:disabled) { background: #ff943e; transform: scale(1.02); }
 
-        .step-container.active {
-            display: block;
-        }
+    /* 复选框组 */
+    .checkbox-group {
+      display: flex;
+      gap: 2rem;
+      margin: 1rem 0;
+      background: #1e1e1e;
+      padding: 1rem;
+      border-radius: 20px;
+      width: fit-content;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .checkbox-item input {
+      width: 1.2rem;
+      height: 1.2rem;
+      accent-color: #ff7a2f;
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px);}
-            to { opacity: 1; transform: translateY(0);}
-        }
+    /* 步骤3 卡片 */
+    .camera-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.8rem;
+      margin: 1.5rem 0;
+    }
+    .camera-card {
+      background: #1c1c1c;
+      border-radius: 20px;
+      padding: 1.2rem;
+      border: 1px solid #2e2e2e;
+    }
+    .camera-name-input {
+      width: 100%;
+      background: #2c2c2c;
+      color: white;
+      border: 1px solid #3a3a3a;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+    .resolution-status {
+      display: flex;
+      gap: 1rem;
+      margin: 0.8rem 0;
+    }
+    .resolution-tag {
+      padding: 0.2rem 0.9rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+    .resolution-tag.enabled { background: #ff7a2f; color: #000; }
+    .resolution-tag.disabled { background: #3a3a3a; color: #777; }
 
-        .step-title {
-            font-size: 1.8rem;
-            margin-bottom: 1.8rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #ff9a3c, #ff5e00);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            display: inline-block;
-        }
+    .upload-buttons {
+      display: flex;
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .upload-btn {
+      flex: 1;
+      padding: 0.55rem;
+      font-size: 0.85rem;
+      border-radius: 40px;
+    }
+    .upload-btn.enabled { background: #ff7a2f; color: black; }
+    .upload-btn.disabled { background: #2c2c2c; color: #5a5a5a; cursor: not-allowed; }
 
-        .form-group {
-            margin-bottom: 2rem;
-        }
+    .append-btn {
+      background: #2a5a7a;
+      color: white;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.7rem;
+      border-radius: 30px;
+      cursor: pointer;
+      border: none;
+    }
+    .append-btn:hover:not(:disabled) { background: #3a7aaa; }
+    .append-btn:disabled { background: #3a3a3a; color: #666; cursor: not-allowed; }
 
-        label {
-            display: block;
-            margin-bottom: 0.6rem;
-            font-weight: 500;
-            color: #bbb;
-        }
+    .image-stats {
+      margin-top: 0.8rem;
+      font-size: 0.8rem;
+      background: #111;
+      padding: 0.5rem;
+      border-radius: 12px;
+      border-left: 3px solid #ff7a2f;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .clear-btn {
+      background: #3a3a3a;
+      color: #ffaa66;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 30px;
+      cursor: pointer;
+      border: none;
+    }
 
-        input, select, button {
-            padding: 0.7rem 1rem;
-            border-radius: 12px;
-            border: none;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
+    /* 步骤4 布局 */
+    #step4 { padding: 0; max-width: 100%; margin: 0; height: 100vh; display: flex; flex-direction: column; }
+    #step4:not(.active) { display: none !important; }
 
-        button {
-            background: #ff7a2f;
-            color: #111;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
+    .step4-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.3rem 0.6rem;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #1e1e1e;
+    }
+    .step4-header .step-title {
+      font-size: 1.1rem;
+      margin-bottom: 0;
+    }
+    .step4-header .step-title span {
+      font-size: 0.65rem;
+      background: #2a2a2a;
+      padding: 0.05rem 0.6rem;
+      border-radius: 30px;
+      font-weight: 400;
+    }
+    .layout-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: #bbb;
+      background: #1a1a1a;
+      padding: 0.15rem 0.6rem 0.15rem 0.8rem;
+      border-radius: 30px;
+      border: 1px solid #333;
+    }
+    .layout-controls select {
+      padding: 0.15rem 0.3rem;
+      font-size: 0.7rem;
+      border-radius: 20px;
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #ff7a2f66;
+      width: 46px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .layout-controls .label { color: #999; margin: 0 1px; }
+    .zoom200-btn {
+      background: #1e4a6b;
+      color: white;
+      border: 1px solid #ff7a2f88;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.7rem;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+    .zoom200-btn:hover { background: #2a6a8b; }
 
-        button:disabled {
-            background-color: #4a4a4a;
-            color: #888;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
+    .step4-wrapper {
+      display: flex;
+      gap: 0.6rem;
+      align-items: stretch;
+      flex: 1;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      min-height: 0;
+    }
 
-        button:hover:not(:disabled) {
-            background-color: #ff943e;
-            transform: scale(1.02);
-        }
+    .comparison-container {
+      flex: 1;
+      gap: 0.6rem;
+      overflow: hidden;
+      background: #0a0a0a;
+      border-radius: 16px;
+      padding: 0;
+      width: 100%;
+      display: grid;  /* grid 模式 */
+    }
+    .comparison-container .camera-column {
+      display: flex;
+      flex-direction: column;
+      background: #121212;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      border: 1px solid #2a2a2a;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-        .checkbox-group {
-            display: flex;
-            gap: 2rem;
-            margin: 1rem 0;
-            background: #1e1e1e;
-            padding: 1rem;
-            border-radius: 20px;
-            width: fit-content;
-        }
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-        .checkbox-item input {
-            width: 1.2rem;
-            height: 1.2rem;
-            accent-color: #ff7a2f;
-        }
+    /* 设备名称放大 */
+    .column-header h3 {
+      font-size: 1.5rem !important;   /* 放大设备名称 */
+      font-weight: 700;
+      word-break: break-word;
+      color: #ffaa66;
+      letter-spacing: 0.5px;
+    }
+    .column-header {
+      padding: 0.5rem 0.8rem;
+      background: #1e1e1e;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      backdrop-filter: blur(4px);
+      z-index: 2;
+      flex-shrink: 0;
+    }
+    .image-controls {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .control-btn {
+      background: #2d2d2d;
+      color: #ffaa66;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+      border-radius: 30px;
+      cursor: pointer;
+      border: none;
+    }
 
-        .camera-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 1.8rem;
-            margin: 1.5rem 0;
-        }
-        .camera-card {
-            background: #1c1c1c;
-            border-radius: 20px;
-            padding: 1.2rem;
-            border: 1px solid #2e2e2e;
-        }
-        .camera-name-input {
-            width: 100%;
-            background: #2c2c2c;
-            color: white;
-            border: 1px solid #3a3a3a;
-            margin-bottom: 1rem;
-            font-weight: 500;
-        }
-        .resolution-status {
-            display: flex;
-            gap: 1rem;
-            margin: 0.8rem 0;
-        }
-        .resolution-tag {
-            padding: 0.2rem 0.9rem;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        .resolution-tag.enabled {
-            background: #ff7a2f;
-            color: #000;
-        }
-        .resolution-tag.disabled {
-            background: #3a3a3a;
-            color: #777;
-        }
-        .upload-buttons {
-            display: flex;
-            gap: 0.8rem;
-            margin: 1rem 0;
-        }
-        .upload-btn {
-            flex: 1;
-            padding: 0.55rem;
-            font-size: 0.85rem;
-            border-radius: 40px;
-        }
-        .upload-btn.enabled {
-            background: #ff7a2f;
-            color: black;
-        }
-        .upload-btn.disabled {
-            background: #2c2c2c;
-            color: #5a5a5a;
-            cursor: not-allowed;
-        }
-        /* 追加按钮样式 */
-        .append-btn {
-            background: #2a5a7a;
-            color: white;
-            padding: 0.3rem 0.8rem;
-            font-size: 0.7rem;
-            border-radius: 30px;
-            cursor: pointer;
-            border: none;
-            margin-left: 0.3rem;
-        }
-        .append-btn:hover:not(:disabled) {
-            background: #3a7aaa;
-        }
-        .append-btn:disabled {
-            background: #3a3a3a;
-            color: #666;
-            cursor: not-allowed;
-        }
+    .image-viewer {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: #000000;
+      cursor: grab;
+      touch-action: none;
+      min-height: 0;
+      width: 100%;
+    }
+    .image-viewer:active { cursor: grabbing; }
+    .image-viewer img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      will-change: transform;
+      pointer-events: none;
+      transition: none;
+    }
 
-        .image-stats {
-            margin-top: 0.8rem;
-            font-size: 0.8rem;
-            background: #111;
-            padding: 0.5rem;
-            border-radius: 12px;
-            border-left: 3px solid #ff7a2f;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        .clear-btn {
-            background: #3a3a3a;
-            color: #ffaa66;
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            margin-left: 0.3rem;
-            border-radius: 30px;
-            cursor: pointer;
-        }
+    .global-nav-panel {
+      width: 64px;
+      background: #111111cc;
+      backdrop-filter: blur(12px);
+      border-radius: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 22px;
+      border: 1px solid #ff7a2f55;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      padding: 16px 0;
+      flex-shrink: 0;
+      align-self: center;
+      z-index: 20;
+    }
+    .global-nav-btn {
+      background: #ff7a2f;
+      border: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 40px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+      color: #111;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .global-nav-btn:hover:not(:disabled) { background: #ffaa66; transform: scale(1.05); }
+    .global-nav-btn:disabled { background: #4a4a4a; color: #888; cursor: not-allowed; transform: none; }
+    .nav-info {
+      font-size: 0.8rem;
+      background: #1e1e1e;
+      padding: 4px 8px;
+      border-radius: 36px;
+      text-align: center;
+      font-weight: bold;
+      color: #ffaa66;
+    }
 
-        .step4-wrapper {
-            display: flex;
-            gap: 0.6rem;
-            align-items: stretch;
-            flex: 1;
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            min-height: 0;
-        }
+    .step-nav {
+      margin-top: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .toast-msg {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff7a2fe6;
+      color: #000;
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      z-index: 999;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
 
-        .comparison-container {
-            flex: 1;
-            gap: 0.6rem;
-            overflow: hidden;
-            background: #0a0a0a;
-            border-radius: 16px;
-            padding: 0;
-            width: 100%;
-            display: flex;  /* fallback for older layout, overridden by grid-mode */
-        }
-        .comparison-container.grid-mode {
-            display: grid;
-            align-content: stretch;
-            justify-items: stretch;
-        }
-        .comparison-container.grid-mode .camera-column {
-            flex: none !important;
-            min-width: 0 !important;
-            width: 100%;
-            height: 100%;
-        }
+    /* 移除右下角提示：不再显示滚轮缩放那一行字 */
+    /* .zoom-hint 已从 HTML 中移除，但保留以防万一 */
+    .zoom-hint { display: none; }
 
-        /* 确保 step4 不 active 时强制隐藏（覆盖内联 display: flex） */
-        #step4:not(.active) {
-            display: none !important;
-        }
-
-        /* 布局选择器 */
-        .layout-controls {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
-            color: #bbb;
-            background: #1a1a1a;
-            padding: 0.15rem 0.6rem 0.15rem 0.8rem;
-            border-radius: 30px;
-            border: 1px solid #333;
-        }
-        .layout-controls select {
-            padding: 0.15rem 0.3rem;
-            font-size: 0.7rem;
-            border-radius: 20px;
-            background: #2a2a2a;
-            color: #e0e0e0;
-            border: 1px solid #ff7a2f66;
-            width: 46px;
-            text-align: center;
-            cursor: pointer;
-        }
-        .layout-controls select:focus {
-            outline: none;
-            border-color: #ff7a2f;
-        }
-        .layout-controls .label {
-            color: #999;
-            margin: 0 1px;
-        }
-        .zoom200-btn {
-            background: #1e4a6b;
-            color: white;
-            border: 1px solid #ff7a2f88;
-            padding: 0.2rem 0.7rem;
-            font-size: 0.7rem;
-            border-radius: 30px;
-            cursor: pointer;
-        }
-        .zoom200-btn:hover { background: #2a6a8b; }
-
-        .camera-column {
-            flex: 1 1 0;
-            display: flex;
-            flex-direction: column;
-            background: #121212;
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-            border: 1px solid #2a2a2a;
-            min-width: 180px;
-        }
-
-        .column-header {
-            padding: 0.5rem 0.8rem;
-            background: #1e1e1e;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            backdrop-filter: blur(4px);
-            z-index: 2;
-            flex-shrink: 0;
-        }
-        .column-header h3 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            word-break: break-word;
-            color: #ffaa66;
-        }
-        .image-controls {
-            display: flex;
-            gap: 0.4rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .control-btn {
-            background: #2d2d2d;
-            color: #ffaa66;
-            padding: 0.2rem 0.6rem;
-            font-size: 0.7rem;
-            border-radius: 30px;
-            cursor: pointer;
-            border: none;
-        }
-
-        .image-viewer {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-            background: #000000;
-            cursor: grab;
-            touch-action: none;
-            min-height: 0;
-            width: 100%;
-        }
-        .image-viewer:active {
-            cursor: grabbing;
-        }
-        .image-viewer img {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            will-change: transform;
-            pointer-events: none;
-            transition: none;
-        }
-
-        .global-nav-panel {
-            width: 64px;
-            background: #111111cc;
-            backdrop-filter: blur(12px);
-            border-radius: 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 22px;
-            border: 1px solid #ff7a2f55;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            padding: 16px 0;
-            flex-shrink: 0;
-            align-self: center;
-            z-index: 20;
-        }
-        .global-nav-btn {
-            background: #ff7a2f;
-            border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 40px;
-            font-size: 1.8rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #111;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
-        .global-nav-btn:hover:not(:disabled) {
-            background: #ffaa66;
-            transform: scale(1.05);
-        }
-        .global-nav-btn:active {
-            transform: scale(0.96);
-        }
-        .global-nav-btn:disabled {
-            background: #4a4a4a;
-            color: #888;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .nav-info {
-            font-size: 0.8rem;
-            background: #1e1e1e;
-            padding: 4px 8px;
-            border-radius: 36px;
-            text-align: center;
-            font-weight: bold;
-            color: #ffaa66;
-            margin-top: 4px;
-        }
-
-        .step-nav {
-            margin-top: 1.2rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .step-nav button {
-            min-width: 100px;
-        }
-        .toast-msg {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff7a2fe6;
-            color: #000;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            z-index: 999;
-            backdrop-filter: blur(10px);
-            pointer-events: none;
-        }
-        .zoom-hint {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 4px 14px;
-            border-radius: 24px;
-            font-size: 12px;
-            color: #ffaa66;
-            pointer-events: none;
-            z-index: 10;
-            font-family: monospace;
-            border: 1px solid #ff7a2f44;
-        }
-        .zoom-indicator {
-            position: absolute;
-            bottom: 8px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            color: #ffaa66;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 10px;
-            border-radius: 30px;
-            border: 1px solid #ff7a2f55;
-            pointer-events: none;
-            z-index: 15;
-            font-family: 'Segoe UI', monospace;
-            letter-spacing: 0.3px;
-            transition: opacity 0.2s;
-        }
-        @media (max-width: 800px) {
-            /* 全屏 grid 布局：保持铺满 */
-            #step4 .step4-wrapper {
-                flex-direction: row;
-                flex: 1;
-                height: auto;
-                min-height: 0;
-            }
-            #step4 .comparison-container.grid-mode {
-                flex-direction: unset;
-                height: 100%;
-                min-height: 0;
-            }
-            #step4 .comparison-container.grid-mode .camera-column {
-                min-height: 0;
-            }
-            .step4-wrapper {
-                flex-direction: column;
-                height: auto;
-                min-height: 70vh;
-            }
-            .comparison-container {
-                flex-direction: column;
-                height: auto;
-                min-height: 50vh;
-            }
-            .camera-column {
-                min-height: 300px;
-                flex: 1 1 auto;
-            }
-            .step-container {
-                padding: 1rem;
-            }
-            .global-nav-panel {
-                width: 100%;
-                flex-direction: row;
-                justify-content: center;
-                gap: 18px;
-                padding: 10px 0;
-                border-radius: 60px;
-                align-self: auto;
-                margin-top: 4px;
-            }
-            .global-nav-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 1.4rem;
-            }
-            .zoom-hint {
-                bottom: 10px;
-                right: 10px;
-                font-size: 10px;
-            }
-        }
-    </style>
+    @media (max-width: 800px) {
+      .step4-wrapper { flex-direction: column; height: auto; min-height: 70vh; }
+      .comparison-container { flex-direction: column; height: auto; min-height: 50vh; }
+      .camera-column { min-height: 300px; flex: 1 1 auto; }
+      .step-container { padding: 1rem; }
+      .global-nav-panel {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        gap: 18px;
+        padding: 10px 0;
+        border-radius: 60px;
+      }
+      .global-nav-btn { width: 44px; height: 44px; font-size: 1.4rem; }
+      .column-header h3 { font-size: 1.3rem !important; }
+    }
+  </style>
 </head>
 <body>
 
-    <div id="step1" class="step-container">
-        <h2 class="step-title">⚡ 步骤1：选择对比摄像头数量</h2>
-        <div class="form-group">
-            <label>📷 镜头数量（1-10）：</label>
-            <input type="number" id="cameraCount" min="1" max="10" value="2" style="width: 140px;">
-        </div>
-        <button onclick="goToStep2()">下一步 →</button>
+<!-- 步骤1 -->
+<div id="step1" class="step-container">
+  <h2 class="step-title">⚡ 步骤1：选择对比摄像头数量</h2>
+  <div class="form-group">
+    <label>📷 镜头数量（1-10）：</label>
+    <input type="number" id="cameraCount" min="1" max="10" value="2" style="width:140px;">
+  </div>
+  <button onclick="goToStep2()">下一步 →</button>
+</div>
+
+<!-- 步骤2 -->
+<div id="step2" class="step-container">
+  <h2 class="step-title">🎥 步骤2：选择分辨率</h2>
+  <div class="form-group">
+    <label>🔍 勾选需要对比的分辨率：</label>
+    <div class="checkbox-group">
+      <div class="checkbox-item"><input type="checkbox" id="res4k" checked> <label>4K (超清)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="res1080p" checked> <label>1080p (全高清)</label></div>
     </div>
+  </div>
+  <div class="step-nav">
+    <button onclick="goToStep1()">← 上一步</button>
+    <button onclick="goToStep3()">下一步 →</button>
+  </div>
+</div>
 
-    <div id="step2" class="step-container">
-        <h2 class="step-title">🎥 步骤2：选择分辨率</h2>
-        <div class="form-group">
-            <label>🔍 勾选需要对比的分辨率：</label>
-            <div class="checkbox-group">
-                <div class="checkbox-item">
-                    <input type="checkbox" id="res4k" checked=""> <label>4K (超清)</label>
-                </div>
-                <div class="checkbox-item">
-                    <input type="checkbox" id="res1080p" checked=""> <label>1080p (全高清)</label>
-                </div>
-            </div>
-        </div>
-        <div class="step-nav">
-            <button onclick="goToStep1()">← 上一步</button>
-            <button onclick="goToStep3()">下一步 →</button>
-        </div>
+<!-- 步骤3 -->
+<div id="step3" class="step-container">
+  <h2 class="step-title">📸 步骤3：配置摄像头 & 上传图片</h2>
+  <div id="cameraGrid" class="camera-grid"></div>
+  <div class="step-nav">
+    <button onclick="goToStep2()">← 上一步</button>
+    <button id="step3NextBtn" onclick="goToStep4()">🚀 开始对比 →</button>
+  </div>
+</div>
+
+<!-- 步骤4 -->
+<div id="step4" class="step-container">
+  <div class="step4-header">
+    <h2 class="step-title">🔍 图像对比 <span>右侧翻页</span></h2>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <div class="layout-controls">
+        <span class="label">布局</span>
+        <select id="rowSelector" onchange="onRowsChange()"><option value="1">1</option></select>
+        <span class="label">行</span>
+        <select id="colSelector" onchange="onColsChange()"><option value="1">1</option></select>
+        <span class="label">列</span>
+      </div>
+      <button class="zoom200-btn" onclick="zoomTo200()">🔍 200%</button>
+      <button onclick="resetZoomAndPan()" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">🔄 重置</button>
+      <button onclick="backToStep3()" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">← 返回</button>
     </div>
-
-    <div id="step3" class="step-container">
-        <h2 class="step-title">📸 步骤3：配置摄像头 &amp; 上传图片</h2>
-        <div id="cameraGrid" class="camera-grid"><div class="camera-card">
-                    <input type="text" class="camera-name-input" value="摄像头1" onchange="updateCameraName(0, this.value)">
-                    <div class="resolution-status">
-                        <span class="resolution-tag enabled">4K</span>
-                        <span class="resolution-tag disabled">1080P</span>
-                    </div>
-                    <div class="upload-buttons">
-                        <button class="upload-btn enabled" onclick="triggerUpload(0, &#39;4k&#39;, false)">📤 上传4K</button>
-                        <button class="upload-btn disabled" disabled="" onclick="triggerUpload(0, &#39;1080p&#39;, false)">📤 上传1080P</button>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; margin: 0.3rem 0;">
-                        <button class="append-btn enabled" onclick="triggerUpload(0, &#39;4k&#39;, true)">➕ 追加4K</button>
-                        <button class="append-btn disabled" disabled="" onclick="triggerUpload(0, &#39;1080p&#39;, true)">➕ 追加1080P</button>
-                    </div>
-                    <div class="image-stats" id="stats_0">
-                    <span>🖼️ 4K: 16 张 &nbsp;|&nbsp; 1080P: 0 张</span>
-                    <button class="clear-btn" onclick="clearCameraResolution(0, &#39;4k&#39;)">清4K</button>
-                    <button class="clear-btn" onclick="clearCameraResolution(0, &#39;1080p&#39;)" disabled="">空1080P</button>
-                </div>
-                    <input type="file" id="fileInput0" multiple="" accept="image/*" style="display:none" onchange="handleFileUpload(0, event)" data-resolution="4k" data-append="false">
-                </div><div class="camera-card">
-                    <input type="text" class="camera-name-input" value="摄像头2" onchange="updateCameraName(1, this.value)">
-                    <div class="resolution-status">
-                        <span class="resolution-tag enabled">4K</span>
-                        <span class="resolution-tag disabled">1080P</span>
-                    </div>
-                    <div class="upload-buttons">
-                        <button class="upload-btn enabled" onclick="triggerUpload(1, &#39;4k&#39;, false)">📤 上传4K</button>
-                        <button class="upload-btn disabled" disabled="" onclick="triggerUpload(1, &#39;1080p&#39;, false)">📤 上传1080P</button>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; margin: 0.3rem 0;">
-                        <button class="append-btn enabled" onclick="triggerUpload(1, &#39;4k&#39;, true)">➕ 追加4K</button>
-                        <button class="append-btn disabled" disabled="" onclick="triggerUpload(1, &#39;1080p&#39;, true)">➕ 追加1080P</button>
-                    </div>
-                    <div class="image-stats" id="stats_1">
-                    <span>🖼️ 4K: 16 张 &nbsp;|&nbsp; 1080P: 0 张</span>
-                    <button class="clear-btn" onclick="clearCameraResolution(1, &#39;4k&#39;)">清4K</button>
-                    <button class="clear-btn" onclick="clearCameraResolution(1, &#39;1080p&#39;)" disabled="">空1080P</button>
-                </div>
-                    <input type="file" id="fileInput1" multiple="" accept="image/*" style="display:none" onchange="handleFileUpload(1, event)" data-resolution="4k" data-append="false">
-                </div></div>
-        <div class="step-nav">
-            <button onclick="goToStep2()">← 上一步</button>
-            <button id="step3NextBtn" onclick="goToStep4()">🚀 开始对比 →</button>
-        </div>
+  </div>
+  <div class="step4-wrapper">
+    <div id="comparisonContainer" class="comparison-container"></div>
+    <div class="global-nav-panel">
+      <button class="global-nav-btn" id="globalPrevBtn" title="上一张 (▲)">▲</button>
+      <button class="global-nav-btn" id="globalNextBtn" title="下一张 (▼)">▼</button>
+      <div class="nav-info" id="pageIndicator">1 / 1</div>
     </div>
+  </div>
+  <!-- 右下角提示已移除 -->
+</div>
 
-    <div id="step4" class="step-container active" style="padding: 0; max-width: 100%; margin: 0; height: 100vh; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0.6rem; flex-shrink: 0; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #1e1e1e;">
-            <h2 class="step-title" style="font-size:1.1rem; margin-bottom:0;">🔍 图像对比 <span style="font-size:0.65rem; background:#2a2a2a; padding:0.05rem 0.6rem; border-radius:30px; font-weight:400;">右侧翻页</span></h2>
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <div class="layout-controls">
-                    <span class="label">布局</span>
-                    <select id="rowSelector" onchange="onRowsChange()">
-                        <option value="1">1</option>
-                    </select>
-                    <span class="label">行</span>
-                    <select id="colSelector" onchange="onColsChange()">
-                        <option value="1">1</option>
-                    </select>
-                    <span class="label">列</span>
-                </div>
-                <button class="zoom200-btn" onclick="zoomTo200()">🔍 200%</button>
-                <button onclick="resetZoomAndPan()" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">🔄 重置</button>
-                <button onclick="backToStep3()" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">← 返回</button>
-            </div>
-        </div>
-        <div class="step4-wrapper">
-            <div id="comparisonContainer" class="comparison-container grid-mode"><div class="camera-column">
-                    <div class="column-header">
-                        <h3>G3</h3>
-                        <div class="image-controls">
-                            <select class="control-btn res-selector" data-camidx="0"><option value="4k">4K</option></select>
-                            <select class="control-btn img-selector" data-camidx="0"><option value="0">TV_CAM_设备_20260729_111029.693.jpg</option><option value="1">TV_CAM_设备_20260729_111144.712.jpg</option><option value="2">TV_CAM_设备_20260729_111302.330.jpg</option><option value="3">TV_CAM_设备_20260729_111440.262.jpg</option><option value="4">TV_CAM_设备_20260729_111637.426.jpg</option><option value="5">TV_CAM_设备_20260729_111706.487.jpg</option><option value="6">TV_CAM_设备_20260729_112106.738.jpg</option><option value="7">TV_CAM_设备_20260729_112155.809.jpg</option><option value="8">TV_CAM_设备_20260729_112614.065.jpg</option><option value="9">TV_CAM_设备_20260729_112658.064.jpg</option><option value="10">TV_CAM_设备_20260729_112728.087.jpg</option><option value="11">TV_CAM_设备_20260729_112804.171.jpg</option><option value="12">TV_CAM_设备_20260729_113659.812.jpg</option><option value="13">TV_CAM_设备_20260729_113740.529.jpg</option><option value="14">TV_CAM_设备_20260729_113829.166.jpg</option><option value="15">TV_CAM_设备_20260729_113928.397.jpg</option></select>
-                        </div>
-                    </div>
-                    <div class="image-viewer" data-viewer-idx="0" style="cursor: grab;">
-                        <img alt="G3" src="blob:https://tigagagaga.github.io/43f6bc8d-1d29-479c-bb73-8091601fa31a" style="transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(1);">
-                    <div class="zoom-indicator">🔍 100%</div></div>
-                </div><div class="camera-column">
-                    <div class="column-header">
-                        <h3>OWL Meeting 4+</h3>
-                        <div class="image-controls">
-                            <select class="control-btn res-selector" data-camidx="1"><option value="4k">4K</option></select>
-                            <select class="control-btn img-selector" data-camidx="1"><option value="0">TV_CAM_设备_20260729_111033.874.jpg</option><option value="1">TV_CAM_设备_20260729_111147.350.jpg</option><option value="2">TV_CAM_设备_20260729_111259.424.jpg</option><option value="3">TV_CAM_设备_20260729_111442.402.jpg</option><option value="4">TV_CAM_设备_20260729_111639.194.jpg</option><option value="5">TV_CAM_设备_20260729_111708.593.jpg</option><option value="6">TV_CAM_设备_20260729_112109.014.jpg</option><option value="7">TV_CAM_设备_20260729_112158.061.jpg</option><option value="8">TV_CAM_设备_20260729_112615.492.jpg</option><option value="9">TV_CAM_设备_20260729_112659.323.jpg</option><option value="10">TV_CAM_设备_20260729_112729.523.jpg</option><option value="11">TV_CAM_设备_20260729_112805.579.jpg</option><option value="12">TV_CAM_设备_20260729_113701.112.jpg</option><option value="13">TV_CAM_设备_20260729_113742.309.jpg</option><option value="14">TV_CAM_设备_20260729_113830.901.jpg</option><option value="15">TV_CAM_设备_20260729_113929.641.jpg</option></select>
-                        </div>
-                    </div>
-                    <div class="image-viewer" data-viewer-idx="1" style="cursor: grab;">
-                        <img alt="OWL Meeting 4+" src="blob:https://tigagagaga.github.io/4518d259-5d76-468e-bcd7-b4dbeea9d1b1" style="transform: translate(calc(-50% + 0px), calc(-50% + 0px)) scale(1);">
-                    <div class="zoom-indicator">🔍 100%</div></div>
-                </div></div>
-            <div class="global-nav-panel">
-                <button class="global-nav-btn" id="globalPrevBtn" title="上一张 (▲)">▲</button>
-                <button class="global-nav-btn" id="globalNextBtn" title="下一张 (▼)">▼</button>
-                <div class="nav-info" id="pageIndicator">2 / 16</div>
-            </div>
-        </div>
-        <div class="zoom-hint" id="zoomHintText">💡 滚轮缩放 · 拖拽平移 · Ctrl独立操作 · 双击恢复同步</div>
-    </div>
+<script>
+  // ============================================================
+  // 1. 持久化工具
+  // ============================================================
+  const STORAGE_KEY = 'wisdom_eye_state_v2';
 
-    <script>
-        // ============================================================
-        // 1. 持久化工具：保存/加载状态 (使用 localStorage)
-        // ============================================================
-        const STORAGE_KEY = 'wisdom_eye_state';
+  function saveStateToStorage() {
+    try {
+      const data = {
+        cameraCount: state.cameraCount,
+        resolutions: state.resolutions,
+        cameras: state.cameras.map(cam => ({
+          name: cam.name,
+          images: {
+            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data })),
+            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data }))
+          }
+        })),
+        currentRes: state.currentRes,
+        currentImgIndex: state.currentImgIndex,
+        syncScale: state.syncScale,
+        syncTranslate: state.syncTranslate,
+        uploadOrder: state.uploadOrder || []   // 新增：记录上传顺序
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) { console.warn('保存失败', e); }
+  }
 
-        function saveStateToStorage() {
-            try {
-                const data = {
-                    cameraCount: state.cameraCount,
-                    resolutions: state.resolutions,
-                    cameras: state.cameras.map(cam => ({
-                        name: cam.name,
-                        images: {
-                            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data })),
-                            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data }))
-                        }
-                    })),
-                    currentRes: state.currentRes,
-                    currentImgIndex: state.currentImgIndex,
-                    syncScale: state.syncScale,
-                    syncTranslate: state.syncTranslate,
-                };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch (e) {
-                console.warn('保存状态失败:', e);
-            }
-        }
-
-        function loadStateFromStorage() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (!raw) return null;
-                const data = JSON.parse(raw);
-                if (data.cameras) {
-                    data.cameras.forEach(cam => {
-                        ['4k', '1080p'].forEach(res => {
-                            if (cam.images && cam.images[res]) {
-                                cam.images[res] = cam.images[res].map(item => {
-                                    if (item.data) {
-                                        const blob = base64ToBlob(item.data);
-                                        const url = URL.createObjectURL(blob);
-                                        return { name: item.name, url: url, data: item.data };
-                                    }
-                                    return { name: item.name, url: '', data: null };
-                                });
-                            } else {
-                                cam.images[res] = [];
-                            }
-                        });
-                    });
+  function loadStateFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data.cameras) {
+        data.cameras.forEach(cam => {
+          ['4k', '1080p'].forEach(res => {
+            if (cam.images && cam.images[res]) {
+              cam.images[res] = cam.images[res].map(item => {
+                if (item.data) {
+                  const blob = base64ToBlob(item.data);
+                  const url = URL.createObjectURL(blob);
+                  return { name: item.name, url, data: item.data };
                 }
-                return data;
-            } catch (e) {
-                console.warn('加载状态失败:', e);
-                return null;
-            }
-        }
-
-        function base64ToBlob(base64) {
-            const parts = base64.split(',');
-            const mime = parts[0].match(/:(.*?);/)[1];
-            const bstr = atob(parts[1]);
-            const n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            for (let i = 0; i < n; i++) {
-                u8arr[i] = bstr.charCodeAt(i);
-            }
-            return new Blob([u8arr], { type: mime });
-        }
-
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // ============================================================
-        // 2. 全局状态
-        // ============================================================
-        const state = {
-            cameraCount: 2,
-            resolutions: { '4k': true, '1080p': true },
-            cameras: [],
-            syncScale: 1,
-            syncTranslate: { x: 0, y: 0 },
-            currentRes: '4k',
-            currentImgIndex: 0,
-        };
-
-        const saved = loadStateFromStorage();
-        if (saved) {
-            state.cameraCount = saved.cameraCount || 2;
-            state.resolutions = saved.resolutions || { '4k': true, '1080p': true };
-            state.cameras = saved.cameras || [];
-            state.currentRes = saved.currentRes || '4k';
-            state.currentImgIndex = saved.currentImgIndex || 0;
-            state.syncScale = saved.syncScale || 1;
-            state.syncTranslate = saved.syncTranslate || { x: 0, y: 0 };
-            if (state.cameras.length === 0) {
-                state.cameras = [];
-                for (let i = 0; i < state.cameraCount; i++) {
-                    state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
-                }
-            }
-        } else {
-            for (let i = 0; i < state.cameraCount; i++) {
-                state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
-            }
-        }
-
-        state.cameras.forEach(cam => {
-            if (!cam.images) cam.images = { '4k': [], '1080p': [] };
-            if (!cam.images['4k']) cam.images['4k'] = [];
-            if (!cam.images['1080p']) cam.images['1080p'] = [];
+                return { name: item.name, url: '', data: null };
+              });
+            } else cam.images[res] = [];
+          });
         });
-
-        if (!state.resolutions[state.currentRes]) {
-            state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
-        }
-
-        const individualStates = new WeakMap();
-
-        function getIndividualState(viewer) {
-            if (!individualStates.has(viewer)) {
-                individualStates.set(viewer, {
-                    scale: state.syncScale,
-                    tx: state.syncTranslate.x,
-                    ty: state.syncTranslate.y
-                });
-            }
-            return individualStates.get(viewer);
-        }
-
-        function isIndividualMode(e) {
-            return e.ctrlKey || e.metaKey;
-        }
-
-        const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'gif', 'tiff', 'avif', 'svg', 'ico'];
-        const isImageFile = (file) => {
-            if (file.type.startsWith('image/')) return true;
-            const ext = file.name.split('.').pop().toLowerCase();
-            return ALLOWED_EXTENSIONS.includes(ext);
-        };
-
-        function showMessage(msg, duration = 1500) {
-            let toast = document.querySelector('.toast-msg');
-            if (toast) toast.remove();
-            let div = document.createElement('div');
-            div.className = 'toast-msg';
-            div.innerText = msg;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), duration);
-        }
-
-        function hideAllSteps() {
-            document.querySelectorAll('.step-container').forEach(step => step.classList.remove('active'));
-        }
-
-        // ============================================================
-        // 3. 步骤导航 (自动保存)
-        // ============================================================
-        function goToStep1() {
-            hideAllSteps();
-            document.getElementById('step1').classList.add('active');
-            document.getElementById('cameraCount').value = state.cameraCount;
-        }
-
-        function goToStep2() {
-            let count = parseInt(document.getElementById('cameraCount').value);
-            if (isNaN(count) || count < 1 || count > 10) {
-                alert('请输入1-10之间的摄像头数量');
-                return;
-            }
-            state.cameraCount = count;
-            state.cameras = [];
-            for (let i = 0; i < state.cameraCount; i++) {
-                state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
-            }
-            document.getElementById('res4k').checked = state.resolutions['4k'];
-            document.getElementById('res1080p').checked = state.resolutions['1080p'];
-            saveStateToStorage();
-            hideAllSteps();
-            document.getElementById('step2').classList.add('active');
-        }
-
-        function goToStep3() {
-            const res4k = document.getElementById('res4k').checked;
-            const res1080p = document.getElementById('res1080p').checked;
-            if (!res4k && !res1080p) {
-                alert('请至少勾选一个分辨率用于对比');
-                return;
-            }
-            state.resolutions['4k'] = res4k;
-            state.resolutions['1080p'] = res1080p;
-            if (!state.resolutions[state.currentRes]) {
-                state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
-            }
-            state.syncScale = 1;
-            state.syncTranslate = { x: 0, y: 0 };
-            state.currentImgIndex = 0;
-            saveStateToStorage();
-            renderCameraGrid();
-            hideAllSteps();
-            document.getElementById('step3').classList.add('active');
-        }
-
-        function backToStep3() {
-            renderCameraGrid();
-            hideAllSteps();
-            document.getElementById('step3').classList.add('active');
-        }
-
-        function goToStep4() {
-            let allValid = true;
-            for (let cam of state.cameras) {
-                let total = cam.images['4k'].length + cam.images['1080p'].length;
-                if (total === 0) { allValid = false; break; }
-            }
-            if (!allValid) {
-                alert('❌ 每个摄像头至少需要上传一张图片');
-                return;
-            }
-            if (!state.resolutions[state.currentRes]) {
-                state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
-            }
-            state.currentImgIndex = 0;
-            state.syncScale = 1;
-            state.syncTranslate = { x: 0, y: 0 };
-            resetIndividualStates();
-            saveStateToStorage();
-            renderComparisonView();
-            hideAllSteps();
-            document.getElementById('step4').classList.add('active');
-        }
-
-        // ============================================================
-        // 4. 摄像头配置 & 图片上传 (带持久化)
-        // ============================================================
-        function clearResolutionImages(camera, resolution) {
-            const imgArray = camera.images[resolution];
-            for (let img of imgArray) {
-                if (img.url) URL.revokeObjectURL(img.url);
-            }
-            camera.images[resolution] = [];
-            saveStateToStorage();
-        }
-
-        function renderCameraGrid() {
-            const grid = document.getElementById('cameraGrid');
-            grid.innerHTML = '';
-            for (let i = 0; i < state.cameraCount; i++) {
-                const cam = state.cameras[i];
-                const card = document.createElement('div');
-                card.className = 'camera-card';
-                // 为每个摄像头生成两个 file input: 一个用于覆盖上传，一个用于追加
-                card.innerHTML = `
-                    <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" onchange="updateCameraName(${i}, this.value)">
-                    <div class="resolution-status">
-                        <span class="resolution-tag ${state.resolutions['4k'] ? 'enabled' : 'disabled'}">4K</span>
-                        <span class="resolution-tag ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}">1080P</span>
-                    </div>
-                    <div class="upload-buttons">
-                        <button class="upload-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" 
-                            ${!state.resolutions['4k'] ? 'disabled' : ''} 
-                            onclick="triggerUpload(${i}, '4k', false)">📤 上传4K</button>
-                        <button class="upload-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" 
-                            ${!state.resolutions['1080p'] ? 'disabled' : ''} 
-                            onclick="triggerUpload(${i}, '1080p', false)">📤 上传1080P</button>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; margin: 0.3rem 0;">
-                        <button class="append-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" 
-                            ${!state.resolutions['4k'] ? 'disabled' : ''} 
-                            onclick="triggerUpload(${i}, '4k', true)">➕ 追加4K</button>
-                        <button class="append-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" 
-                            ${!state.resolutions['1080p'] ? 'disabled' : ''} 
-                            onclick="triggerUpload(${i}, '1080p', true)">➕ 追加1080P</button>
-                    </div>
-                    <div class="image-stats" id="stats_${i}">
-                        <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
-                        <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
-                        <button class="clear-btn" onclick="clearCameraResolution(${i}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>
-                    </div>
-                    <input type="file" id="fileInput${i}" multiple accept="image/*" style="display:none" onchange="handleFileUpload(${i}, event)">
-                `;
-                grid.appendChild(card);
-            }
-            checkAllUploaded();
-        }
-
-        window.clearCameraResolution = function(camIdx, resolution) {
-            const cam = state.cameras[camIdx];
-            if (!cam) return;
-            clearResolutionImages(cam, resolution);
-            updateStatsDisplay(camIdx);
-            saveStateToStorage();
-            checkAllUploaded();
-            showMessage(`已清空 ${resolution.toUpperCase()} 图片`, 1000);
-        };
-
-        function updateStatsDisplay(camIdx) {
-            const cam = state.cameras[camIdx];
-            const statsDiv = document.getElementById(`stats_${camIdx}`);
-            if (statsDiv) {
-                statsDiv.innerHTML = `
-                    <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
-                    <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length === 0 ? 'disabled' : ''}>清4K</button>
-                    <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length === 0 ? 'disabled' : ''}>空1080P</button>
-                `;
-            }
-        }
-
-        function escapeHtml(str) {
-            return String(str).replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-
-        window.updateCameraName = function(index, name) {
-            state.cameras[index].name = name;
-            saveStateToStorage();
-        };
-
-        // triggerUpload 增加 append 参数: false=覆盖(清空后上传), true=追加
-        window.triggerUpload = function(cameraIndex, resolution, append) {
-            const input = document.getElementById(`fileInput${cameraIndex}`);
-            input.dataset.resolution = resolution;
-            input.dataset.append = append ? 'true' : 'false';
-            input.click();
-        };
-
-        window.handleFileUpload = async function(cameraIndex, event) {
-            const files = event.target.files;
-            const resolution = event.target.dataset.resolution;
-            const append = event.target.dataset.append === 'true';
-            if (!files || files.length === 0) return;
-
-            const camera = state.cameras[cameraIndex];
-            
-            // 如果不是追加模式，清空原有图片
-            if (!append) {
-                const oldImages = camera.images[resolution];
-                for (let img of oldImages) {
-                    if (img.url) URL.revokeObjectURL(img.url);
-                }
-                camera.images[resolution] = [];
-            }
-
-            const newImages = [];
-            let invalidCount = 0;
-            for (let file of files) {
-                if (!isImageFile(file)) {
-                    invalidCount++;
-                    continue;
-                }
-                try {
-                    const base64 = await fileToBase64(file);
-                    const url = URL.createObjectURL(file);
-                    newImages.push({ name: file.name, url: url, data: base64 });
-                } catch (e) {
-                    console.warn('读取文件失败:', file.name, e);
-                }
-            }
-            if (invalidCount > 0) {
-                showMessage(`⚠️ 已过滤 ${invalidCount} 个非图片文件`, 2000);
-            }
-            if (newImages.length === 0 && files.length > 0) {
-                showMessage(`❌ 所选文件中没有有效的图片`, 1800);
-                event.target.value = '';
-                return;
-            }
-            // 合并已有图片和新图片，并排序
-            const existing = camera.images[resolution] || [];
-            const combined = [...existing, ...newImages];
-            combined.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-            camera.images[resolution] = combined;
-            saveStateToStorage();
-
-            updateStatsDisplay(cameraIndex);
-            event.target.value = '';
-            checkAllUploaded();
-            const action = append ? '追加' : '上传';
-            showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} ${action} ${newImages.length} 张 (共${combined.length}张)`, 1500);
-        };
-
-        function checkAllUploaded() {
-            let allHasImages = true;
-            for (let cam of state.cameras) {
-                let total = cam.images['4k'].length + cam.images['1080p'].length;
-                if (total === 0) { allHasImages = false; break; }
-            }
-            const nextBtn = document.getElementById('step3NextBtn');
-            if (nextBtn) nextBtn.disabled = !allHasImages;
-        }
-
-        // ============================================================
-        // 5. 对比视图 (步骤4)
-        // ============================================================
-        function getCurrentMaxValidIndex() {
-            let minLen = Infinity;
-            for (let cam of state.cameras) {
-                const list = cam.images[state.currentRes];
-                if (list && list.length) minLen = Math.min(minLen, list.length);
-                else minLen = 0;
-            }
-            return minLen === Infinity ? 0 : minLen;
-        }
-
-        function navigateImages(direction) {
-            if (!state.cameras.length) return;
-            let totalImages = getCurrentMaxValidIndex();
-            if (totalImages === 0) {
-                let fallbackRes = null;
-                if (state.resolutions['4k'] && state.currentRes !== '4k') fallbackRes = '4k';
-                else if (state.resolutions['1080p'] && state.currentRes !== '1080p') fallbackRes = '1080p';
-                if (fallbackRes) {
-                    state.currentRes = fallbackRes;
-                    totalImages = getCurrentMaxValidIndex();
-                    syncResolutionSelectors();
-                }
-                if (totalImages === 0) {
-                    showMessage("当前分辨率无可用图片，请先上传或切换分辨率", 1200);
-                    return;
-                }
-            }
-
-            let newIndex = state.currentImgIndex;
-            if (direction === 'prev') {
-                if (newIndex <= 0) { showMessage("已是第一张图片", 1000); return; }
-                newIndex = newIndex - 1;
-            } else if (direction === 'next') {
-                if (newIndex >= totalImages - 1) { showMessage("已是最后一张图片", 1000); return; }
-                newIndex = newIndex + 1;
-            }
-            if (newIndex === state.currentImgIndex) return;
-
-            state.currentImgIndex = newIndex;
-            saveStateToStorage();
-            const allImgSelects = document.querySelectorAll('.img-selector');
-            for (let sel of allImgSelects) {
-                if (sel.options.length > newIndex) sel.value = newIndex;
-            }
-            refreshAllImagesInStep4();
-            updatePageIndicator(totalImages);
-            showMessage(`📷 第 ${newIndex+1} / ${totalImages} 张`, 800);
-        }
-
-        function syncResolutionSelectors() {
-            const allResSelects = document.querySelectorAll('.res-selector');
-            allResSelects.forEach(sel => { if (sel.value !== state.currentRes) sel.value = state.currentRes; });
-        }
-
-        function updatePageIndicator(total) {
-            const indicator = document.getElementById('pageIndicator');
-            if (indicator) {
-                if (total && total > 0) {
-                    indicator.innerText = `${state.currentImgIndex+1} / ${total}`;
-                } else {
-                    indicator.innerText = `0 / 0`;
-                }
-            }
-            const prevBtn = document.getElementById('globalPrevBtn');
-            const nextBtn = document.getElementById('globalNextBtn');
-            if (prevBtn && nextBtn && total > 0) {
-                prevBtn.disabled = (state.currentImgIndex === 0);
-                nextBtn.disabled = (state.currentImgIndex >= total - 1);
-            } else if (prevBtn && nextBtn) {
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-            }
-        }
-
-        function resetZoomAndPan() {
-            state.syncScale = 1;
-            state.syncTranslate = { x: 0, y: 0 };
-            resetIndividualStates();
-            updateAllImagesTransform();
-            updateAllZoomIndicators();
-            saveStateToStorage();
-            showMessage("视图已重置 (100% 居中)", 1000);
-        }
-
-        function zoomTo200() {
-            const targetScale = 2.0;
-            state.syncScale = targetScale;
-            resetIndividualStates();
-            document.querySelectorAll('.image-viewer').forEach(viewer => {
-                const st = getIndividualState(viewer);
-                st.scale = targetScale;
-                st.tx = 0;
-                st.ty = 0;
-            });
-            state.syncTranslate = { x: 0, y: 0 };
-            updateAllImagesTransform();
-            updateAllZoomIndicators();
-            saveStateToStorage();
-            showMessage("🔍 已放大到 200%", 1000);
-        }
-
-        function refreshAllImagesInStep4() {
-            resetIndividualStates();
-            for (let i = 0; i < state.cameraCount; i++) {
-                const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
-                if (!viewerDiv) continue;
-                const imgEl = viewerDiv.querySelector('img');
-                const camera = state.cameras[i];
-                const targetImg = getCurrentImageForCamera(camera);
-                if (targetImg && targetImg.url) {
-                    imgEl.src = targetImg.url;
-                } else {
-                    imgEl.src = '';
-                }
-                applyTransformToImage(imgEl);
-            }
-            const total = getCurrentMaxValidIndex();
-            updatePageIndicator(total);
-            updateAllZoomIndicators();
-        }
-
-        function getCurrentImageForCamera(camera) {
-            const res = state.currentRes;
-            const imgList = camera.images[res];
-            if (imgList && imgList.length > 0) {
-                let safeIndex = Math.min(state.currentImgIndex, imgList.length - 1);
-                if (safeIndex < 0) safeIndex = 0;
-                return imgList[safeIndex];
-            }
-            const otherRes = res === '4k' ? '1080p' : '4k';
-            const otherList = camera.images[otherRes];
-            if (otherList && otherList.length) return otherList[0];
-            return null;
-        }
-
-        function updateZoomIndicator(viewer) {
-            let zoom = state.syncScale;
-            if (individualStates.has(viewer)) {
-                zoom = individualStates.get(viewer).scale;
-            }
-            let indicator = viewer.querySelector('.zoom-indicator');
-            if (!indicator) {
-                indicator = document.createElement('div');
-                indicator.className = 'zoom-indicator';
-                viewer.appendChild(indicator);
-            }
-            const percent = Math.round(zoom * 100);
-            indicator.textContent = `🔍 ${percent}%`;
-        }
-
-        function updateAllZoomIndicators() {
-            document.querySelectorAll('.image-viewer').forEach(v => updateZoomIndicator(v));
-        }
-
-        function updateAllImagesTransform() {
-            document.querySelectorAll('.image-viewer').forEach(viewer => {
-                const imgEl = viewer.querySelector('img');
-                if (!imgEl) return;
-                if (individualStates.has(viewer)) {
-                    const st = individualStates.get(viewer);
-                    imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
-                } else {
-                    applyTransformToImage(imgEl);
-                }
-                updateZoomIndicator(viewer);
-            });
-        }
-
-        function applyTransformToImage(imgEl) {
-            if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
-        }
-
-        function resetIndividualStates() {
-            const viewers = document.querySelectorAll('.image-viewer');
-            viewers.forEach(v => individualStates.delete(v));
-        }
-
-        function clearViewerIndividualState(viewer) {
-            individualStates.delete(viewer);
-            const imgEl = viewer.querySelector('img');
-            if (imgEl) applyTransformToImage(imgEl);
-            updateZoomIndicator(viewer);
-            saveStateToStorage();
-            showMessage('已恢复同步', 800);
-        }
-
-        function renderComparisonView() {
-            const container = document.getElementById('comparisonContainer');
-            container.innerHTML = '';
-            if (state.cameraCount === 0) return;
-
-            let resOptions = '';
-            if (state.resolutions['4k']) resOptions += `<option value="4k">4K</option>`;
-            if (state.resolutions['1080p']) resOptions += `<option value="1080p">1080P</option>`;
-
-            for (let i = 0; i < state.cameraCount; i++) {
-                const camera = state.cameras[i];
-                const currentResImgs = camera.images[state.currentRes];
-                let imgOptions = '';
-                if (currentResImgs && currentResImgs.length) {
-                    imgOptions = currentResImgs.map((img, idx) => `<option value="${idx}">${escapeHtml(img.name)}</option>`).join('');
-                } else {
-                    imgOptions = '<option disabled>无图片</option>';
-                }
-                const column = document.createElement('div');
-                column.className = 'camera-column';
-                column.innerHTML = `
-                    <div class="column-header">
-                        <h3>${escapeHtml(camera.name)}</h3>
-                        <div class="image-controls">
-                            ${resOptions.length ? `<select class="control-btn res-selector" data-camidx="${i}">${resOptions}</select>` : ''}
-                            <select class="control-btn img-selector" data-camidx="${i}">${imgOptions}</select>
-                        </div>
-                    </div>
-                    <div class="image-viewer" data-viewer-idx="${i}">
-                        <img alt="${camera.name}" src="">
-                    </div>
-                `;
-                container.appendChild(column);
-            }
-
-            const allResSelects = document.querySelectorAll('.res-selector');
-            const allImgSelects = document.querySelectorAll('.img-selector');
-
-            const refreshAllImages = () => {
-                for (let i = 0; i < state.cameraCount; i++) {
-                    const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
-                    if (!viewerDiv) continue;
-                    const imgEl = viewerDiv.querySelector('img');
-                    const camera = state.cameras[i];
-                    const targetImg = getCurrentImageForCamera(camera);
-                    if (targetImg && targetImg.url) {
-                        imgEl.src = targetImg.url;
-                    } else {
-                        imgEl.src = '';
-                    }
-                    applyTransformToImage(imgEl);
-                }
-                const total = getCurrentMaxValidIndex();
-                updatePageIndicator(total);
-                updateAllZoomIndicators();
-                saveStateToStorage();
-            };
-
-            const rebuildImgSelectors = () => {
-                for (let i = 0; i < state.cameraCount; i++) {
-                    const camera = state.cameras[i];
-                    const resImages = camera.images[state.currentRes];
-                    const selector = document.querySelector(`.img-selector[data-camidx="${i}"]`);
-                    if (!selector) continue;
-                    if (resImages && resImages.length > 0) {
-                        let newOptions = '';
-                        resImages.forEach((img, idx) => { newOptions += `<option value="${idx}">${escapeHtml(img.name)}</option>`; });
-                        selector.innerHTML = newOptions;
-                        let safeIdx = Math.min(state.currentImgIndex, resImages.length - 1);
-                        if (safeIdx < 0) safeIdx = 0;
-                        selector.value = safeIdx;
-                        state.currentImgIndex = safeIdx;
-                    } else {
-                        selector.innerHTML = '<option disabled>无图片</option>';
-                    }
-                }
-                refreshAllImages();
-            };
-
-            const onResolutionChange = (e) => {
-                const newRes = e.target.value;
-                state.currentRes = newRes;
-                allResSelects.forEach(sel => { if (sel !== e.target) sel.value = newRes; });
-                state.currentImgIndex = 0;
-                rebuildImgSelectors();
-                const total = getCurrentMaxValidIndex();
-                updatePageIndicator(total);
-                updateAllZoomIndicators();
-                saveStateToStorage();
-            };
-
-            const onImageIndexChange = (e) => {
-                let newIdx = parseInt(e.target.value);
-                if (isNaN(newIdx)) newIdx = 0;
-                state.currentImgIndex = newIdx;
-                for (let sel of allImgSelects) {
-                    if (sel !== e.target && sel.options.length > newIdx) sel.value = newIdx;
-                }
-                refreshAllImages();
-                saveStateToStorage();
-            };
-
-            allResSelects.forEach(sel => sel.addEventListener('change', onResolutionChange));
-            allImgSelects.forEach(sel => sel.addEventListener('change', onImageIndexChange));
-            rebuildImgSelectors();
-
-            const viewers = document.querySelectorAll('.image-viewer');
-            viewers.forEach(viewer => bindCenterZoomAndPan(viewer));
-            updateAllImagesTransform();
-            updateAllZoomIndicators();
-
-            const prevGlobal = document.getElementById('globalPrevBtn');
-            const nextGlobal = document.getElementById('globalNextBtn');
-            if (prevGlobal) prevGlobal.onclick = () => navigateImages('prev');
-            if (nextGlobal) nextGlobal.onclick = () => navigateImages('next');
-            const total = getCurrentMaxValidIndex();
-            updatePageIndicator(total);
-            // 应用默认 Grid 布局
-            applyDefaultLayout();
-        }
-
-        // ============================================================
-        // 5b. 行列布局控制 (CSS Grid 全屏铺满)
-        // ============================================================
-        // 行列选择器随摄像头数量动态生成（N 个摄像头 → 行×列 = N）
-        // ============================================================
-        function getDivisors(n) {
-            const divs = [];
-            for (let i = 1; i <= n; i++) {
-                if (n % i === 0) divs.push(i);
-            }
-            return divs;
-        }
-
-        function populateLayoutSelectors() {
-            const n = state.cameraCount;
-            const rowSel = document.getElementById('rowSelector');
-            const colSel = document.getElementById('colSelector');
-            if (!rowSel || !colSel) return;
-
-            const divisors = getDivisors(n);
-
-            rowSel.innerHTML = '';
-            colSel.innerHTML = '';
-            divisors.forEach(d => {
-                const opt1 = document.createElement('option');
-                opt1.value = d;
-                opt1.textContent = d;
-                rowSel.appendChild(opt1);
-                const opt2 = document.createElement('option');
-                opt2.value = d;
-                opt2.textContent = d;
-                colSel.appendChild(opt2);
-            });
-
-            // 默认选择最接近正方形的布局
-            let bestR = divisors[0];
-            for (const d of divisors) {
-                if (d * d <= n) bestR = d;
-            }
-            rowSel.value = String(bestR);
-            colSel.value = String(n / bestR);
-        }
-
-        function onRowsChange() {
-            const n = state.cameraCount;
-            const rowSel = document.getElementById('rowSelector');
-            const colSel = document.getElementById('colSelector');
-            const rows = parseInt(rowSel.value);
-            if (isNaN(rows) || rows < 1) return;
-            if (n % rows === 0) {
-                colSel.value = String(n / rows);
-                applyLayout();
-            }
-        }
-
-        function onColsChange() {
-            const n = state.cameraCount;
-            const rowSel = document.getElementById('rowSelector');
-            const colSel = document.getElementById('colSelector');
-            const cols = parseInt(colSel.value);
-            if (isNaN(cols) || cols < 1) return;
-            if (n % cols === 0) {
-                rowSel.value = String(n / cols);
-                applyLayout();
-            }
-        }
-
-        function applyDefaultLayout() {
-            populateLayoutSelectors();
-            applyLayout();
-        }
-
-        window.applyLayout = function() {
-            const rows = parseInt(document.getElementById('rowSelector').value);
-            const cols = parseInt(document.getElementById('colSelector').value);
-            if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) return;
-
-            const container = document.getElementById('comparisonContainer');
-            const columns = container.querySelectorAll('.camera-column');
-            if (columns.length === 0) return;
-
-            container.classList.add('grid-mode');
-            container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-
-            // 移除所有行内 flex 遗留样式
-            columns.forEach(col => {
-                col.style.flex = 'none';
-                col.style.minWidth = '0';
-                col.style.width = '100%';
-                col.style.height = '100%';
-            });
-
-            showMessage(`已切换为 ${rows} 行 × ${cols} 列`, 800);
-        };
-
-        // ============================================================
-        // 6. 缩放/平移交互 (增加指示器更新)
-        // ============================================================
-        function bindCenterZoomAndPan(viewer) {
-            let isDragging = false, startX, startY;
-            let dragIndividual = false;
-
-            const handleWheel = (e) => {
-                e.preventDefault();
-                if (isIndividualMode(e)) {
-                    const st = getIndividualState(viewer);
-                    let newScale = st.scale + (e.deltaY < 0 ? 0.2 : -0.2);
-                    newScale = Math.min(20.0, Math.max(1.0, newScale));
-                    if (Math.abs(newScale - st.scale) < 0.001) return;
-                    const ratio = newScale / st.scale;
-                    st.tx *= ratio;
-                    st.ty *= ratio;
-                    st.scale = newScale;
-                    const imgEl = viewer.querySelector('img');
-                    if (imgEl) {
-                        imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
-                    }
-                    updateZoomIndicator(viewer);
-                    showHint('individual');
-                } else {
-                    let newScale = state.syncScale + (e.deltaY < 0 ? 0.2 : -0.2);
-                    newScale = Math.min(20.0, Math.max(1.0, newScale));
-                    if (Math.abs(newScale - state.syncScale) < 0.001) return;
-                    const ratio = newScale / state.syncScale;
-                    state.syncTranslate.x *= ratio;
-                    state.syncTranslate.y *= ratio;
-                    state.syncScale = newScale;
-                    document.querySelectorAll('.image-viewer').forEach(v => {
-                        if (individualStates.has(v)) {
-                            const s = individualStates.get(v);
-                            s.scale *= ratio;
-                            s.tx *= ratio;
-                            s.ty *= ratio;
-                        }
-                    });
-                    updateAllImagesTransform();
-                    updateAllZoomIndicators();
-                    showHint('sync');
-                }
-                saveStateToStorage();
-            };
-
-            const onMouseDown = (e) => {
-                if (e.button !== 0) return;
-                isDragging = true;
-                dragIndividual = isIndividualMode(e);
-                if (dragIndividual) {
-                    const st = getIndividualState(viewer);
-                    startX = e.clientX - st.tx;
-                    startY = e.clientY - st.ty;
-                } else {
-                    startX = e.clientX - state.syncTranslate.x;
-                    startY = e.clientY - state.syncTranslate.y;
-                }
-                viewer.style.cursor = 'grabbing';
-                e.preventDefault();
-            };
-
-            const onMouseMove = (e) => {
-                if (!isDragging) return;
-                if (dragIndividual) {
-                    const st = getIndividualState(viewer);
-                    st.tx = e.clientX - startX;
-                    st.ty = e.clientY - startY;
-                    const imgEl = viewer.querySelector('img');
-                    if (imgEl) {
-                        imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
-                    }
-                    updateZoomIndicator(viewer);
-                } else {
-                    const newTx = e.clientX - startX;
-                    const newTy = e.clientY - startY;
-                    const dx = newTx - state.syncTranslate.x;
-                    const dy = newTy - state.syncTranslate.y;
-                    state.syncTranslate.x = newTx;
-                    state.syncTranslate.y = newTy;
-                    document.querySelectorAll('.image-viewer').forEach(v => {
-                        if (individualStates.has(v)) {
-                            const s = individualStates.get(v);
-                            s.tx += dx;
-                            s.ty += dy;
-                        }
-                    });
-                    updateAllImagesTransform();
-                    updateAllZoomIndicators();
-                }
-            };
-
-            const onMouseUp = () => {
-                if (isDragging) {
-                    isDragging = false;
-                    viewer.style.cursor = 'grab';
-                    saveStateToStorage();
-                }
-            };
-
-            viewer.addEventListener('wheel', handleWheel, { passive: false });
-            viewer.addEventListener('mousedown', onMouseDown);
-            window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mouseup', onMouseUp);
-            viewer.addEventListener('dblclick', () => {
-                if (individualStates.has(viewer)) {
-                    clearViewerIndividualState(viewer);
-                }
-            });
-            viewer.style.cursor = 'grab';
-        }
-
-        let hintTimeout = null;
-
-        function showHint(mode) {
-            const el = document.getElementById('zoomHintText');
-            if (!el) return;
-            if (mode === 'individual') {
-                el.textContent = '🔍 独立缩放/平移 (按住Ctrl)';
-            } else {
-                el.textContent = '💡 滚轮缩放 · 拖拽平移 · Ctrl独立操作 · 双击恢复同步';
-            }
-            clearTimeout(hintTimeout);
-            hintTimeout = setTimeout(() => {
-                el.textContent = '💡 滚轮缩放 · 拖拽平移 · Ctrl独立操作 · 双击恢复同步';
-            }, 1500);
-        }
-
-        // ============================================================
-        // 7. 启动: 根据保存状态跳转到对应步骤
-        // ============================================================
-        function initApp() {
-            let hasImages = false;
-            for (let cam of state.cameras) {
-                if (cam.images['4k'].length > 0 || cam.images['1080p'].length > 0) {
-                    hasImages = true;
-                    break;
-                }
-            }
-            if (hasImages && state.cameras.length > 0) {
-                goToStep4();
-            } else {
-                if (state.cameras.length > 0) {
-                    goToStep3();
-                } else {
-                    goToStep1();
-                }
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('res4k').checked = state.resolutions['4k'];
-            document.getElementById('res1080p').checked = state.resolutions['1080p'];
-            document.getElementById('cameraCount').value = state.cameraCount;
-            initApp();
+      }
+      return data;
+    } catch (e) { return null; }
+  }
+
+  function base64ToBlob(base64) {
+    const parts = base64.split(',');
+    const mime = parts[0].match(/:(.*?);/)[1];
+    const bstr = atob(parts[1]);
+    const n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+    return new Blob([u8arr], { type: mime });
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ============================================================
+  // 2. 全局状态
+  // ============================================================
+  const state = {
+    cameraCount: 2,
+    resolutions: { '4k': true, '1080p': true },
+    cameras: [],
+    syncScale: 1,
+    syncTranslate: { x: 0, y: 0 },
+    currentRes: '4k',
+    currentImgIndex: 0,
+    uploadOrder: []   // 存储上传顺序：每个元素 { camIdx, resolution, fileName }
+  };
+
+  const saved = loadStateFromStorage();
+  if (saved) {
+    state.cameraCount = saved.cameraCount || 2;
+    state.resolutions = saved.resolutions || { '4k': true, '1080p': true };
+    state.cameras = saved.cameras || [];
+    state.currentRes = saved.currentRes || '4k';
+    state.currentImgIndex = saved.currentImgIndex || 0;
+    state.syncScale = saved.syncScale || 1;
+    state.syncTranslate = saved.syncTranslate || { x: 0, y: 0 };
+    state.uploadOrder = saved.uploadOrder || [];
+    if (state.cameras.length === 0) {
+      for (let i = 0; i < state.cameraCount; i++) {
+        state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
+      }
+    }
+  } else {
+    for (let i = 0; i < state.cameraCount; i++) {
+      state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
+    }
+  }
+  state.cameras.forEach(cam => {
+    if (!cam.images) cam.images = { '4k': [], '1080p': [] };
+    if (!cam.images['4k']) cam.images['4k'] = [];
+    if (!cam.images['1080p']) cam.images['1080p'] = [];
+  });
+  if (!state.resolutions[state.currentRes]) {
+    state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+  }
+
+  const individualStates = new WeakMap();
+  function getIndividualState(viewer) {
+    if (!individualStates.has(viewer)) {
+      individualStates.set(viewer, { scale: state.syncScale, tx: state.syncTranslate.x, ty: state.syncTranslate.y });
+    }
+    return individualStates.get(viewer);
+  }
+  function isIndividualMode(e) { return e.ctrlKey || e.metaKey; }
+
+  const ALLOWED_EXTENSIONS = ['jpg','jpeg','png','bmp','webp','gif','tiff','avif','svg','ico'];
+  const isImageFile = (file) => {
+    if (file.type.startsWith('image/')) return true;
+    const ext = file.name.split('.').pop().toLowerCase();
+    return ALLOWED_EXTENSIONS.includes(ext);
+  };
+
+  function showMessage(msg, duration = 1500) {
+    let toast = document.querySelector('.toast-msg');
+    if (toast) toast.remove();
+    let div = document.createElement('div');
+    div.className = 'toast-msg';
+    div.innerText = msg;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), duration);
+  }
+
+  function hideAllSteps() {
+    document.querySelectorAll('.step-container').forEach(step => step.classList.remove('active'));
+  }
+
+  // ============================================================
+  // 3. 步骤导航
+  // ============================================================
+  function goToStep1() {
+    hideAllSteps();
+    document.getElementById('step1').classList.add('active');
+    document.getElementById('cameraCount').value = state.cameraCount;
+  }
+  function goToStep2() {
+    let count = parseInt(document.getElementById('cameraCount').value);
+    if (isNaN(count) || count < 1 || count > 10) { alert('请输入1-10'); return; }
+    state.cameraCount = count;
+    state.cameras = [];
+    for (let i = 0; i < state.cameraCount; i++) {
+      state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
+    }
+    state.uploadOrder = [];
+    document.getElementById('res4k').checked = state.resolutions['4k'];
+    document.getElementById('res1080p').checked = state.resolutions['1080p'];
+    saveStateToStorage();
+    hideAllSteps();
+    document.getElementById('step2').classList.add('active');
+  }
+  function goToStep3() {
+    const res4k = document.getElementById('res4k').checked;
+    const res1080p = document.getElementById('res1080p').checked;
+    if (!res4k && !res1080p) { alert('至少勾选一个分辨率'); return; }
+    state.resolutions['4k'] = res4k;
+    state.resolutions['1080p'] = res1080p;
+    if (!state.resolutions[state.currentRes]) {
+      state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+    }
+    state.syncScale = 1; state.syncTranslate = { x: 0, y: 0 };
+    state.currentImgIndex = 0;
+    saveStateToStorage();
+    renderCameraGrid();
+    hideAllSteps();
+    document.getElementById('step3').classList.add('active');
+  }
+  function backToStep3() {
+    renderCameraGrid();
+    hideAllSteps();
+    document.getElementById('step3').classList.add('active');
+  }
+  function goToStep4() {
+    let allValid = true;
+    for (let cam of state.cameras) {
+      let total = cam.images['4k'].length + cam.images['1080p'].length;
+      if (total === 0) { allValid = false; break; }
+    }
+    if (!allValid) { alert('每个摄像头至少上传一张图片'); return; }
+    if (!state.resolutions[state.currentRes]) {
+      state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+    }
+    state.currentImgIndex = 0;
+    state.syncScale = 1; state.syncTranslate = { x: 0, y: 0 };
+    resetIndividualStates();
+    saveStateToStorage();
+    renderComparisonView();
+    hideAllSteps();
+    document.getElementById('step4').classList.add('active');
+  }
+
+  // ============================================================
+  // 4. 摄像头配置 & 图片上传 (按顺序记录)
+  // ============================================================
+  function clearResolutionImages(camera, resolution) {
+    const imgArray = camera.images[resolution];
+    for (let img of imgArray) if (img.url) URL.revokeObjectURL(img.url);
+    camera.images[resolution] = [];
+    // 清理顺序记录
+    state.uploadOrder = state.uploadOrder.filter(item => !(item.resolution === resolution && state.cameras.indexOf(camera) === item.camIdx));
+    saveStateToStorage();
+  }
+
+  function renderCameraGrid() {
+    const grid = document.getElementById('cameraGrid');
+    grid.innerHTML = '';
+    for (let i = 0; i < state.cameraCount; i++) {
+      const cam = state.cameras[i];
+      const card = document.createElement('div');
+      card.className = 'camera-card';
+      card.innerHTML = `
+        <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" onchange="updateCameraName(${i}, this.value)">
+        <div class="resolution-status">
+          <span class="resolution-tag ${state.resolutions['4k'] ? 'enabled' : 'disabled'}">4K</span>
+          <span class="resolution-tag ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}">1080P</span>
+        </div>
+        <div class="upload-buttons">
+          <button class="upload-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" ${!state.resolutions['4k'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '4k', false)">📤 上传4K</button>
+          <button class="upload-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" ${!state.resolutions['1080p'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '1080p', false)">📤 上传1080P</button>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin:0.3rem 0;">
+          <button class="append-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" ${!state.resolutions['4k'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '4k', true)">➕ 追加4K</button>
+          <button class="append-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" ${!state.resolutions['1080p'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '1080p', true)">➕ 追加1080P</button>
+        </div>
+        <div class="image-stats" id="stats_${i}">
+          <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
+          <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
+          <button class="clear-btn" onclick="clearCameraResolution(${i}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length===0 ? 'disabled' : ''}>空1080P</button>
+        </div>
+        <input type="file" id="fileInput${i}" multiple accept="image/*" style="display:none" onchange="handleFileUpload(${i}, event)">
+      `;
+      grid.appendChild(card);
+    }
+    checkAllUploaded();
+  }
+
+  window.clearCameraResolution = function(camIdx, resolution) {
+    const cam = state.cameras[camIdx];
+    if (!cam) return;
+    clearResolutionImages(cam, resolution);
+    updateStatsDisplay(camIdx);
+    saveStateToStorage();
+    checkAllUploaded();
+    showMessage(`已清空 ${resolution.toUpperCase()} 图片`, 1000);
+  };
+
+  function updateStatsDisplay(camIdx) {
+    const cam = state.cameras[camIdx];
+    const statsDiv = document.getElementById(`stats_${camIdx}`);
+    if (statsDiv) {
+      statsDiv.innerHTML = `
+        <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
+        <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
+        <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length===0 ? 'disabled' : ''}>空1080P</button>
+      `;
+    }
+  }
+
+  function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+  window.updateCameraName = function(index, name) {
+    state.cameras[index].name = name;
+    saveStateToStorage();
+  };
+
+  window.triggerUpload = function(cameraIndex, resolution, append) {
+    const input = document.getElementById(`fileInput${cameraIndex}`);
+    input.dataset.resolution = resolution;
+    input.dataset.append = append ? 'true' : 'false';
+    input.click();
+  };
+
+  window.handleFileUpload = async function(cameraIndex, event) {
+    const files = event.target.files;
+    const resolution = event.target.dataset.resolution;
+    const append = event.target.dataset.append === 'true';
+    if (!files || files.length === 0) return;
+
+    const camera = state.cameras[cameraIndex];
+    if (!append) {
+      // 覆盖：清空该分辨率所有图片，并清除对应的顺序记录
+      for (let img of camera.images[resolution]) if (img.url) URL.revokeObjectURL(img.url);
+      camera.images[resolution] = [];
+      state.uploadOrder = state.uploadOrder.filter(item => !(item.camIdx === cameraIndex && item.resolution === resolution));
+    }
+
+    const newImages = [];
+    let invalidCount = 0;
+    for (let file of files) {
+      if (!isImageFile(file)) { invalidCount++; continue; }
+      try {
+        const base64 = await fileToBase64(file);
+        const url = URL.createObjectURL(file);
+        newImages.push({ name: file.name, url, data: base64 });
+        // 记录上传顺序（追加模式也记录新文件）
+        state.uploadOrder.push({ camIdx: cameraIndex, resolution, fileName: file.name });
+      } catch(e) { console.warn('读取失败', file.name, e); }
+    }
+    if (invalidCount > 0) showMessage(`⚠️ 过滤 ${invalidCount} 个非图片文件`, 2000);
+    if (newImages.length === 0 && files.length > 0) { showMessage('没有有效图片', 1800); event.target.value = ''; return; }
+
+    // 合并已有图片和新图片，按上传顺序排序（根据 uploadOrder）
+    const existing = camera.images[resolution] || [];
+    const combined = [...existing, ...newImages];
+    // 按 uploadOrder 排序：只保留顺序中存在的图片，其余追加到末尾（兼容旧数据）
+    const orderMap = new Map();
+    state.uploadOrder.forEach((item, idx) => {
+      const key = `${item.camIdx}_${item.resolution}_${item.fileName}`;
+      if (!orderMap.has(key)) orderMap.set(key, idx);
+    });
+    combined.sort((a, b) => {
+      const keyA = `${cameraIndex}_${resolution}_${a.name}`;
+      const keyB = `${cameraIndex}_${resolution}_${b.name}`;
+      const idxA = orderMap.has(keyA) ? orderMap.get(keyA) : Infinity;
+      const idxB = orderMap.has(keyB) ? orderMap.get(keyB) : Infinity;
+      return idxA - idxB;
+    });
+    camera.images[resolution] = combined;
+    saveStateToStorage();
+    updateStatsDisplay(cameraIndex);
+    event.target.value = '';
+    checkAllUploaded();
+    showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} ${append?'追加':'上传'} ${newImages.length} 张`, 1500);
+  };
+
+  function checkAllUploaded() {
+    let allHasImages = true;
+    for (let cam of state.cameras) {
+      if (cam.images['4k'].length + cam.images['1080p'].length === 0) { allHasImages = false; break; }
+    }
+    const nextBtn = document.getElementById('step3NextBtn');
+    if (nextBtn) nextBtn.disabled = !allHasImages;
+  }
+
+  // ============================================================
+  // 5. 对比视图 (步骤4) - 按顺序展示
+  // ============================================================
+  function getCurrentMaxValidIndex() {
+    let minLen = Infinity;
+    for (let cam of state.cameras) {
+      const list = cam.images[state.currentRes];
+      if (list && list.length) minLen = Math.min(minLen, list.length);
+      else minLen = 0;
+    }
+    return minLen === Infinity ? 0 : minLen;
+  }
+
+  function navigateImages(direction) {
+    if (!state.cameras.length) return;
+    let totalImages = getCurrentMaxValidIndex();
+    if (totalImages === 0) {
+      let fallbackRes = null;
+      if (state.resolutions['4k'] && state.currentRes !== '4k') fallbackRes = '4k';
+      else if (state.resolutions['1080p'] && state.currentRes !== '1080p') fallbackRes = '1080p';
+      if (fallbackRes) { state.currentRes = fallbackRes; totalImages = getCurrentMaxValidIndex(); syncResolutionSelectors(); }
+      if (totalImages === 0) { showMessage("当前分辨率无图片", 1200); return; }
+    }
+    let newIndex = state.currentImgIndex;
+    if (direction === 'prev') { if (newIndex <= 0) { showMessage("已是第一张", 1000); return; } newIndex--; }
+    else if (direction === 'next') { if (newIndex >= totalImages-1) { showMessage("已是最后一张", 1000); return; } newIndex++; }
+    if (newIndex === state.currentImgIndex) return;
+    state.currentImgIndex = newIndex;
+    saveStateToStorage();
+    const allImgSelects = document.querySelectorAll('.img-selector');
+    for (let sel of allImgSelects) {
+      if (sel.options.length > newIndex) sel.value = newIndex;
+    }
+    refreshAllImagesInStep4();
+    updatePageIndicator(totalImages);
+    showMessage(`📷 第 ${newIndex+1} / ${totalImages} 张`, 800);
+  }
+
+  function syncResolutionSelectors() {
+    document.querySelectorAll('.res-selector').forEach(sel => { if (sel.value !== state.currentRes) sel.value = state.currentRes; });
+  }
+
+  function updatePageIndicator(total) {
+    const indicator = document.getElementById('pageIndicator');
+    if (indicator) indicator.innerText = total > 0 ? `${state.currentImgIndex+1} / ${total}` : '0 / 0';
+    const prevBtn = document.getElementById('globalPrevBtn');
+    const nextBtn = document.getElementById('globalNextBtn');
+    if (prevBtn && nextBtn) {
+      prevBtn.disabled = (state.currentImgIndex === 0 || total === 0);
+      nextBtn.disabled = (state.currentImgIndex >= total-1 || total === 0);
+    }
+  }
+
+  function resetZoomAndPan() {
+    state.syncScale = 1; state.syncTranslate = { x: 0, y: 0 };
+    resetIndividualStates();
+    updateAllImagesTransform();
+    updateAllZoomIndicators();
+    saveStateToStorage();
+    showMessage("视图已重置", 1000);
+  }
+
+  function zoomTo200() {
+    state.syncScale = 2.0;
+    resetIndividualStates();
+    document.querySelectorAll('.image-viewer').forEach(viewer => {
+      const st = getIndividualState(viewer);
+      st.scale = 2.0; st.tx = 0; st.ty = 0;
+    });
+    state.syncTranslate = { x: 0, y: 0 };
+    updateAllImagesTransform();
+    updateAllZoomIndicators();
+    saveStateToStorage();
+    showMessage("🔍 200%", 1000);
+  }
+
+  function refreshAllImagesInStep4() {
+    resetIndividualStates();
+    for (let i = 0; i < state.cameraCount; i++) {
+      const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
+      if (!viewerDiv) continue;
+      const imgEl = viewerDiv.querySelector('img');
+      const camera = state.cameras[i];
+      const targetImg = getCurrentImageForCamera(camera);
+      if (targetImg && targetImg.url) imgEl.src = targetImg.url;
+      else imgEl.src = '';
+      applyTransformToImage(imgEl);
+    }
+    const total = getCurrentMaxValidIndex();
+    updatePageIndicator(total);
+    updateAllZoomIndicators();
+  }
+
+  function getCurrentImageForCamera(camera) {
+    const res = state.currentRes;
+    const imgList = camera.images[res];
+    if (imgList && imgList.length > 0) {
+      let safeIndex = Math.min(state.currentImgIndex, imgList.length - 1);
+      if (safeIndex < 0) safeIndex = 0;
+      return imgList[safeIndex];
+    }
+    const otherRes = res === '4k' ? '1080p' : '4k';
+    const otherList = camera.images[otherRes];
+    if (otherList && otherList.length) return otherList[0];
+    return null;
+  }
+
+  function updateZoomIndicator(viewer) {
+    let zoom = state.syncScale;
+    if (individualStates.has(viewer)) zoom = individualStates.get(viewer).scale;
+    let indicator = viewer.querySelector('.zoom-indicator');
+    if (!indicator) { indicator = document.createElement('div'); indicator.className = 'zoom-indicator'; viewer.appendChild(indicator); }
+    indicator.textContent = `🔍 ${Math.round(zoom*100)}%`;
+  }
+
+  function updateAllZoomIndicators() {
+    document.querySelectorAll('.image-viewer').forEach(v => updateZoomIndicator(v));
+  }
+
+  function updateAllImagesTransform() {
+    document.querySelectorAll('.image-viewer').forEach(viewer => {
+      const imgEl = viewer.querySelector('img');
+      if (!imgEl) return;
+      if (individualStates.has(viewer)) {
+        const st = individualStates.get(viewer);
+        imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+      } else applyTransformToImage(imgEl);
+      updateZoomIndicator(viewer);
+    });
+  }
+
+  function applyTransformToImage(imgEl) {
+    if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${state.syncTranslate.x}px), calc(-50% + ${state.syncTranslate.y}px)) scale(${state.syncScale})`;
+  }
+
+  function resetIndividualStates() {
+    document.querySelectorAll('.image-viewer').forEach(v => individualStates.delete(v));
+  }
+
+  function clearViewerIndividualState(viewer) {
+    individualStates.delete(viewer);
+    const imgEl = viewer.querySelector('img');
+    if (imgEl) applyTransformToImage(imgEl);
+    updateZoomIndicator(viewer);
+    saveStateToStorage();
+    showMessage('已恢复同步', 800);
+  }
+
+  // ============================================================
+  // 5b. 行列布局
+  // ============================================================
+  function getDivisors(n) { const d=[]; for(let i=1;i<=n;i++) if(n%i===0) d.push(i); return d; }
+  function populateLayoutSelectors() {
+    const n = state.cameraCount;
+    const rowSel = document.getElementById('rowSelector');
+    const colSel = document.getElementById('colSelector');
+    if (!rowSel || !colSel) return;
+    const divisors = getDivisors(n);
+    rowSel.innerHTML = ''; colSel.innerHTML = '';
+    divisors.forEach(d => {
+      const opt1 = document.createElement('option'); opt1.value = d; opt1.textContent = d; rowSel.appendChild(opt1);
+      const opt2 = document.createElement('option'); opt2.value = d; opt2.textContent = d; colSel.appendChild(opt2);
+    });
+    let bestR = divisors[0];
+    for (const d of divisors) if (d*d <= n) bestR = d;
+    rowSel.value = String(bestR);
+    colSel.value = String(n / bestR);
+  }
+  function onRowsChange() {
+    const n = state.cameraCount;
+    const rowSel = document.getElementById('rowSelector');
+    const colSel = document.getElementById('colSelector');
+    const rows = parseInt(rowSel.value);
+    if (isNaN(rows) || rows < 1) return;
+    if (n % rows === 0) { colSel.value = String(n / rows); applyLayout(); }
+  }
+  function onColsChange() {
+    const n = state.cameraCount;
+    const rowSel = document.getElementById('rowSelector');
+    const colSel = document.getElementById('colSelector');
+    const cols = parseInt(colSel.value);
+    if (isNaN(cols) || cols < 1) return;
+    if (n % cols === 0) { rowSel.value = String(n / cols); applyLayout(); }
+  }
+  window.applyLayout = function() {
+    const rows = parseInt(document.getElementById('rowSelector').value);
+    const cols = parseInt(document.getElementById('colSelector').value);
+    if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) return;
+    const container = document.getElementById('comparisonContainer');
+    const columns = container.querySelectorAll('.camera-column');
+    if (columns.length === 0) return;
+    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    columns.forEach(col => { col.style.flex = 'none'; col.style.minWidth = '0'; col.style.width = '100%'; col.style.height = '100%'; });
+    showMessage(`布局 ${rows}×${cols}`, 800);
+  };
+  function applyDefaultLayout() { populateLayoutSelectors(); applyLayout(); }
+
+  // ============================================================
+  // 6. 缩放/平移交互
+  // ============================================================
+  function bindCenterZoomAndPan(viewer) {
+    let isDragging = false, startX, startY, dragIndividual = false;
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (isIndividualMode(e)) {
+        const st = getIndividualState(viewer);
+        let newScale = st.scale + (e.deltaY < 0 ? 0.2 : -0.2);
+        newScale = Math.min(20, Math.max(1, newScale));
+        if (Math.abs(newScale - st.scale) < 0.001) return;
+        const ratio = newScale / st.scale;
+        st.tx *= ratio; st.ty *= ratio; st.scale = newScale;
+        const imgEl = viewer.querySelector('img');
+        if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+        updateZoomIndicator(viewer);
+      } else {
+        let newScale = state.syncScale + (e.deltaY < 0 ? 0.2 : -0.2);
+        newScale = Math.min(20, Math.max(1, newScale));
+        if (Math.abs(newScale - state.syncScale) < 0.001) return;
+        const ratio = newScale / state.syncScale;
+        state.syncTranslate.x *= ratio; state.syncTranslate.y *= ratio; state.syncScale = newScale;
+        document.querySelectorAll('.image-viewer').forEach(v => {
+          if (individualStates.has(v)) { const s = individualStates.get(v); s.scale *= ratio; s.tx *= ratio; s.ty *= ratio; }
         });
-
-        window.addEventListener('beforeunload', () => {
-            saveStateToStorage();
+        updateAllImagesTransform();
+        updateAllZoomIndicators();
+      }
+      saveStateToStorage();
+    };
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      isDragging = true; dragIndividual = isIndividualMode(e);
+      if (dragIndividual) { const st = getIndividualState(viewer); startX = e.clientX - st.tx; startY = e.clientY - st.ty; }
+      else { startX = e.clientX - state.syncTranslate.x; startY = e.clientY - state.syncTranslate.y; }
+      viewer.style.cursor = 'grabbing'; e.preventDefault();
+    };
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      if (dragIndividual) {
+        const st = getIndividualState(viewer);
+        st.tx = e.clientX - startX; st.ty = e.clientY - startY;
+        const imgEl = viewer.querySelector('img');
+        if (imgEl) imgEl.style.transform = `translate(calc(-50% + ${st.tx}px), calc(-50% + ${st.ty}px)) scale(${st.scale})`;
+        updateZoomIndicator(viewer);
+      } else {
+        const newTx = e.clientX - startX, newTy = e.clientY - startY;
+        const dx = newTx - state.syncTranslate.x, dy = newTy - state.syncTranslate.y;
+        state.syncTranslate.x = newTx; state.syncTranslate.y = newTy;
+        document.querySelectorAll('.image-viewer').forEach(v => {
+          if (individualStates.has(v)) { const s = individualStates.get(v); s.tx += dx; s.ty += dy; }
         });
+        updateAllImagesTransform(); updateAllZoomIndicators();
+      }
+    };
+    const onMouseUp = () => { if (isDragging) { isDragging = false; viewer.style.cursor = 'grab'; saveStateToStorage(); } };
+    viewer.addEventListener('wheel', handleWheel, { passive: false });
+    viewer.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    viewer.addEventListener('dblclick', () => { if (individualStates.has(viewer)) clearViewerIndividualState(viewer); });
+    viewer.style.cursor = 'grab';
+  }
 
-        // 暴露全局
-        window.goToStep1 = goToStep1;
-        window.goToStep2 = goToStep2;
-        window.goToStep3 = goToStep3;
-        window.goToStep4 = goToStep4;
-        window.backToStep3 = backToStep3;
-        window.resetZoomAndPan = resetZoomAndPan;
-        window.navigateImages = navigateImages;
-        window.zoomTo200 = zoomTo200;
-        window.applyLayout = applyLayout;
-        window.onRowsChange = onRowsChange;
-        window.onColsChange = onColsChange;
-        window.populateLayoutSelectors = populateLayoutSelectors;
-    </script>
+  // ============================================================
+  // 7. 渲染对比视图
+  // ============================================================
+  function renderComparisonView() {
+    const container = document.getElementById('comparisonContainer');
+    container.innerHTML = '';
+    if (state.cameraCount === 0) return;
+    let resOptions = '';
+    if (state.resolutions['4k']) resOptions += `<option value="4k">4K</option>`;
+    if (state.resolutions['1080p']) resOptions += `<option value="1080p">1080P</option>`;
 
+    for (let i = 0; i < state.cameraCount; i++) {
+      const camera = state.cameras[i];
+      const currentResImgs = camera.images[state.currentRes];
+      let imgOptions = '';
+      if (currentResImgs && currentResImgs.length) {
+        imgOptions = currentResImgs.map((img, idx) => `<option value="${idx}">${escapeHtml(img.name)}</option>`).join('');
+      } else imgOptions = '<option disabled>无图片</option>';
+      const column = document.createElement('div');
+      column.className = 'camera-column';
+      column.innerHTML = `
+        <div class="column-header">
+          <h3>${escapeHtml(camera.name)}</h3>
+          <div class="image-controls">
+            ${resOptions.length ? `<select class="control-btn res-selector" data-camidx="${i}">${resOptions}</select>` : ''}
+            <select class="control-btn img-selector" data-camidx="${i}">${imgOptions}</select>
+          </div>
+        </div>
+        <div class="image-viewer" data-viewer-idx="${i}">
+          <img alt="${camera.name}" src="">
+        </div>
+      `;
+      container.appendChild(column);
+    }
 
-</body></html>
+    const allResSelects = document.querySelectorAll('.res-selector');
+    const allImgSelects = document.querySelectorAll('.img-selector');
+
+    const refreshAllImages = () => {
+      for (let i = 0; i < state.cameraCount; i++) {
+        const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
+        if (!viewerDiv) continue;
+        const imgEl = viewerDiv.querySelector('img');
+        const camera = state.cameras[i];
+        const targetImg = getCurrentImageForCamera(camera);
+        if (targetImg && targetImg.url) imgEl.src = targetImg.url;
+        else imgEl.src = '';
+        applyTransformToImage(imgEl);
+      }
+      const total = getCurrentMaxValidIndex();
+      updatePageIndicator(total);
+      updateAllZoomIndicators();
+      saveStateToStorage();
+    };
+
+    const rebuildImgSelectors = () => {
+      for (let i = 0; i < state.cameraCount; i++) {
+        const camera = state.cameras[i];
+        const resImages = camera.images[state.currentRes];
+        const selector = document.querySelector(`.img-selector[data-camidx="${i}"]`);
+        if (!selector) continue;
+        if (resImages && resImages.length > 0) {
+          let newOptions = '';
+          resImages.forEach((img, idx) => { newOptions += `<option value="${idx}">${escapeHtml(img.name)}</option>`; });
+          selector.innerHTML = newOptions;
+          let safeIdx = Math.min(state.currentImgIndex, resImages.length - 1);
+          if (safeIdx < 0) safeIdx = 0;
+          selector.value = safeIdx;
+          state.currentImgIndex = safeIdx;
+        } else selector.innerHTML = '<option disabled>无图片</option>';
+      }
+      refreshAllImages();
+    };
+
+    const onResolutionChange = (e) => {
+      state.currentRes = e.target.value;
+      allResSelects.forEach(sel => { if (sel !== e.target) sel.value = state.currentRes; });
+      state.currentImgIndex = 0;
+      rebuildImgSelectors();
+      const total = getCurrentMaxValidIndex();
+      updatePageIndicator(total);
+      updateAllZoomIndicators();
+      saveStateToStorage();
+    };
+
+    const onImageIndexChange = (e) => {
+      let newIdx = parseInt(e.target.value);
+      if (isNaN(newIdx)) newIdx = 0;
+      state.currentImgIndex = newIdx;
+      for (let sel of allImgSelects) {
+        if (sel !== e.target && sel.options.length > newIdx) sel.value = newIdx;
+      }
+      refreshAllImages();
+      saveStateToStorage();
+    };
+
+    allResSelects.forEach(sel => sel.addEventListener('change', onResolutionChange));
+    allImgSelects.forEach(sel => sel.addEventListener('change', onImageIndexChange));
+    rebuildImgSelectors();
+
+    const viewers = document.querySelectorAll('.image-viewer');
+    viewers.forEach(viewer => bindCenterZoomAndPan(viewer));
+    updateAllImagesTransform();
+    updateAllZoomIndicators();
+
+    const prevGlobal = document.getElementById('globalPrevBtn');
+    const nextGlobal = document.getElementById('globalNextBtn');
+    if (prevGlobal) prevGlobal.onclick = () => navigateImages('prev');
+    if (nextGlobal) nextGlobal.onclick = () => navigateImages('next');
+    const total = getCurrentMaxValidIndex();
+    updatePageIndicator(total);
+    applyDefaultLayout();
+  }
+
+  // ============================================================
+  // 8. 初始化
+  // ============================================================
+  function initApp() {
+    document.getElementById('res4k').checked = state.resolutions['4k'];
+    document.getElementById('res1080p').checked = state.resolutions['1080p'];
+    document.getElementById('cameraCount').value = state.cameraCount;
+    let hasImages = false;
+    for (let cam of state.cameras) {
+      if (cam.images['4k'].length > 0 || cam.images['1080p'].length > 0) { hasImages = true; break; }
+    }
+    if (hasImages && state.cameras.length > 0) goToStep4();
+    else if (state.cameras.length > 0) goToStep3();
+    else goToStep1();
+  }
+
+  window.addEventListener('DOMContentLoaded', initApp);
+  window.addEventListener('beforeunload', () => saveStateToStorage());
+
+  // 暴露全局
+  window.goToStep1 = goToStep1; window.goToStep2 = goToStep2; window.goToStep3 = goToStep3;
+  window.goToStep4 = goToStep4; window.backToStep3 = backToStep3;
+  window.resetZoomAndPan = resetZoomAndPan; window.navigateImages = navigateImages;
+  window.zoomTo200 = zoomTo200; window.applyLayout = applyLayout;
+  window.onRowsChange = onRowsChange; window.onColsChange = onColsChange;
+  window.populateLayoutSelectors = populateLayoutSelectors;
+</script>
+</body>
+</html>
