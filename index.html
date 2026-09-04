@@ -675,7 +675,11 @@
       let total = cam.images['4k'].length + cam.images['1080p'].length;
       if (total === 0) { allValid = false; break; }
     }
-    if (!allValid) { alert('每个摄像头至少上传一张图片'); return; }
+    if (!allValid) {
+      alert('每个摄像头至少上传一张图片');
+      goToStep3();  // 兜底回到上传页,避免停留在全黑/无可见步骤状态
+      return;
+    }
     if (!state.resolutions[state.currentRes]) {
       state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
     }
@@ -1214,11 +1218,10 @@
     document.getElementById('res4k').checked = state.resolutions['4k'];
     document.getElementById('res1080p').checked = state.resolutions['1080p'];
     document.getElementById('cameraCount').value = state.cameraCount;
-    let hasImages = false;
-    for (let cam of state.cameras) {
-      if (cam.images['4k'].length > 0 || cam.images['1080p'].length > 0) { hasImages = true; break; }
-    }
-    if (hasImages && state.cameras.length > 0) goToStep4();
+    let readyForStep4 = state.cameras.length > 0 && state.cameras.every(cam =>
+      cam.images['4k'].length > 0 || cam.images['1080p'].length > 0
+    );
+    if (readyForStep4) goToStep4();
     else if (state.cameras.length > 0) goToStep3();
     else goToStep1();
   }
