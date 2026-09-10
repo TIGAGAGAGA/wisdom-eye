@@ -62,7 +62,6 @@
     }
     button:hover:not(:disabled) { background: #ff943e; transform: scale(1.02); }
 
-    /* 摄像头网格：和之前步骤3一致 */
     .camera-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -75,6 +74,11 @@
       padding: 1.2rem;
       border: 1px solid #2e2e2e;
       position: relative;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .camera-card.active-paste {
+      border-color: #ff7a2f;
+      box-shadow: 0 0 0 1px #ff7a2f, 0 4px 16px rgba(255,122,47,0.25);
     }
     .camera-name-input {
       width: 100%;
@@ -110,6 +114,30 @@
     .append-btn:hover:not(:disabled) { background: #3a7aaa; }
     .append-btn:disabled { background: #3a3a3a; color: #666; cursor: not-allowed; }
 
+    .paste-target {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0.5rem 0 0.2rem;
+      font-size: 0.75rem;
+      color: #999;
+    }
+    .paste-target .tag-btn {
+      padding: 0.15rem 0.7rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      cursor: pointer;
+      border: 1px solid #444;
+      background: #2a2a2a;
+      color: #aaa;
+    }
+    .paste-target .tag-btn.selected {
+      background: #ff7a2f;
+      color: #111;
+      border-color: #ff7a2f;
+    }
+
     .image-stats {
       margin-top: 0.8rem;
       font-size: 0.8rem;
@@ -132,7 +160,6 @@
       border: none;
     }
 
-    /* 卡片右侧操作列：+ 和 垃圾桶 */
     .camera-card-actions {
       position: absolute;
       top: 0.8rem;
@@ -452,7 +479,7 @@
   // ============================================================
   // 1. 持久化工具
   // ============================================================
-  const STORAGE_KEY = 'wisdom_eye_state_v3';
+  const STORAGE_KEY = 'wisdom_eye_state_v4';
 
   function saveStateToStorage() {
     try {
@@ -462,15 +489,18 @@
         cameras: state.cameras.map(cam => ({
           name: cam.name,
           images: {
-            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data })),
-            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data }))
+            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data, seq: img.seq })),
+            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data, seq: img.seq }))
           }
         })),
         currentRes: state.currentRes,
         currentImgIndex: state.currentImgIndex,
         syncScale: state.syncScale,
         syncTranslate: state.syncTranslate,
-        uploadOrder: state.uploadOrder || []
+        uploadOrder: state.uploadOrder || [],
+        pasteTargetRes: state.pasteTargetRes || '4k',
+        activeCameraIndex: state.activeCameraIndex || 0,
+        seqCounter: state.seqCounter || 0
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) { console.warn('保存失败', e); }
@@ -489,9 +519,9 @@
                 if (item.data) {
                   const blob = base64ToBlob(item.data);
                   const url = URL.createObjectURL(blob);
-                  return { name: item.name, url, data: item.data };
+                  return { name: item.name, url, data: item.data, seq: item.seq ?? 0 };
                 }
-                return { name: item.name, url: '', data: null };
+                return { name: item.name, url: '', data: null, seq: item.seq ?? 0 };
               });
             } else cam.images[res] = [];
           });
@@ -531,7 +561,10 @@
     syncTranslate: { x: 0, y: 0 },
     currentRes: '4k',
     currentImgIndex: 0,
-    uploadOrder: []
+    uploadOrder: [],
+    pasteTargetRes: '4k',
+    activeCameraIndex: 0,
+    seqCounter: 0
   };
 
   const saved = loadStateFromStorage();
@@ -544,6 +577,9 @@
     state.syncScale = saved.syncScale || 1;
     state.syncTranslate = saved.syncTranslate || { x: 0, y: 0 };
     state.uploadOrder = saved.uploadOrder || [];
+    state.pasteTargetRes = saved.pasteTargetRes || '4k';
+    state.activeCameraIndex = saved.activeCameraIndex || 0;
+    state.seqCounter = saved.seqCounter || 0;
     if (state.cameras.length === 0) {
       for (let i = 0; i < state.cameraCount; i++) {
         state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
@@ -554,16 +590,30 @@
       state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
     }
   }
-  // 强制两个分辨率都可用，避免旧存储导致按钮变灰
   state.resolutions = { '4k': true, '1080p': true };
   state.cameras.forEach(cam => {
     if (!cam.images) cam.images = { '4k': [], '1080p': [] };
     if (!cam.images['4k']) cam.images['4k'] = [];
     if (!cam.images['1080p']) cam.images['1080p'] = [];
+    ['4k', '1080p'].forEach(res => {
+      cam.images[res].forEach(img => { if (typeof img.seq !== 'number') img.seq = 0; });
+      cam.images[res].sort((a, b) => (a.seq || 0) - (b.seq || 0));
+    });
   });
+  if (!state.seqCounter) {
+    let maxSeq = -1;
+    state.cameras.forEach(cam => {
+      ['4k', '1080p'].forEach(res => {
+        cam.images[res].forEach(img => { if (img.seq > maxSeq) maxSeq = img.seq; });
+      });
+    });
+    state.seqCounter = maxSeq + 1;
+  }
   if (!state.resolutions[state.currentRes]) {
     state.currentRes = '4k';
   }
+  if (state.activeCameraIndex >= state.cameras.length) state.activeCameraIndex = 0;
+  if (state.pasteTargetRes !== '4k' && state.pasteTargetRes !== '1080p') state.pasteTargetRes = '4k';
 
   const individualStates = new WeakMap();
   function getIndividualState(viewer) {
@@ -580,6 +630,34 @@
     const ext = file.name.split('.').pop().toLowerCase();
     return ALLOWED_EXTENSIONS.includes(ext);
   };
+
+  // 文件名自然排序：把文件名中的数字块按数值比较，其余按本地化字符串比较
+  // 例如 img2.jpg < img10.jpg，1.jpg < 2.jpg < 10.jpg
+  function naturalCompare(aName, bName) {
+    const a = String(aName || '');
+    const b = String(bName || '');
+    const re = /(\d+)|(\D+)/g;
+    const aParts = a.match(re) || [];
+    const bParts = b.match(re) || [];
+    const len = Math.min(aParts.length, bParts.length);
+    for (let i = 0; i < len; i++) {
+      const ap = aParts[i];
+      const bp = bParts[i];
+      const aNum = /^\d+$/.test(ap);
+      const bNum = /^\d+$/.test(bp);
+      if (aNum && bNum) {
+        const an = parseInt(ap, 10);
+        const bn = parseInt(bp, 10);
+        if (an !== bn) return an - bn;
+        if (ap.length !== bp.length) return ap.length - bp.length;
+      } else {
+        const cmp = ap.localeCompare(bp, 'zh-Hans-CN');
+        if (cmp !== 0) return cmp;
+      }
+    }
+    if (aParts.length !== bParts.length) return aParts.length - bParts.length;
+    return a.localeCompare(b, 'zh-Hans-CN');
+  }
 
   function showMessage(msg, duration = 1500) {
     let toast = document.querySelector('.toast-msg');
@@ -641,10 +719,13 @@
     const grid = document.getElementById('cameraGrid');
     grid.innerHTML = '';
     state.cameraCount = state.cameras.length;
+    if (state.activeCameraIndex >= state.cameras.length) state.activeCameraIndex = 0;
+
     for (let i = 0; i < state.cameras.length; i++) {
       const cam = state.cameras[i];
       const card = document.createElement('div');
-      card.className = 'camera-card';
+      card.className = 'camera-card' + (i === state.activeCameraIndex ? ' active-paste' : '');
+      card.dataset.camIdx = i;
       const isFirst = i === 0;
       card.innerHTML = `
         <div class="camera-card-actions">
@@ -660,6 +741,11 @@
           <button class="append-btn enabled" onclick="triggerUpload(${i}, '4k', true)">➕ 追加4K</button>
           <button class="append-btn enabled" onclick="triggerUpload(${i}, '1080p', true)">➕ 追加1080P</button>
         </div>
+        <div class="paste-target">
+          <span>粘贴到：</span>
+          <span class="tag-btn ${i === state.activeCameraIndex && state.pasteTargetRes === '4k' ? 'selected' : ''}" onclick="setPasteTarget(${i}, '4k')">4K</span>
+          <span class="tag-btn ${i === state.activeCameraIndex && state.pasteTargetRes === '1080p' ? 'selected' : ''}" onclick="setPasteTarget(${i}, '1080p')">1080P</span>
+        </div>
         <div class="image-stats" id="stats_${i}">
           <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
           <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
@@ -667,10 +753,41 @@
         </div>
         <input type="file" id="fileInput${i}" multiple accept="image/*" style="display:none" onchange="handleFileUpload(${i}, event)">
       `;
+      card.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        setActiveCamera(i);
+      });
+      card.addEventListener('paste', (e) => onPaste(e, i));
       grid.appendChild(card);
     }
     checkAnyUploaded();
   }
+
+  window.setPasteTarget = function(camIdx, res) {
+    state.activeCameraIndex = camIdx;
+    state.pasteTargetRes = res;
+    saveStateToStorage();
+    renderCameraGrid();
+    showMessage(`粘贴目标：摄像头${camIdx+1} · ${res.toUpperCase()}`, 800);
+  };
+
+  function setActiveCamera(i) {
+    if (state.activeCameraIndex === i) return;
+    state.activeCameraIndex = i;
+    saveStateToStorage();
+    document.querySelectorAll('.camera-card').forEach(card => {
+      const idx = parseInt(card.dataset.camIdx);
+      card.classList.toggle('active-paste', idx === i);
+    });
+    document.querySelectorAll('.camera-card').forEach(card => {
+      const idx = parseInt(card.dataset.camIdx);
+      card.querySelectorAll('.paste-target .tag-btn').forEach(btn => {
+        const res = btn.textContent.trim().toLowerCase().includes('1080') ? '1080p' : '4k';
+        btn.classList.toggle('selected', idx === i && res === state.pasteTargetRes);
+      });
+    });
+  }
+  window.setActiveCamera = setActiveCamera;
 
   window.addCamera = function() {
     state.cameras.push({ name: `摄像头${state.cameras.length + 1}`, images: { '4k': [], '1080p': [] } });
@@ -694,6 +811,7 @@
     state.cameras.forEach((c, i) => {
       if (/^摄像头\d+$/.test(c.name)) c.name = `摄像头${i + 1}`;
     });
+    if (state.activeCameraIndex >= state.cameras.length) state.activeCameraIndex = Math.max(0, state.cameras.length - 1);
     if (state.currentImgIndex >= getCurrentMaxValidIndex()) {
       state.currentImgIndex = Math.max(0, getCurrentMaxValidIndex() - 1);
     }
@@ -742,49 +860,72 @@
     const resolution = event.target.dataset.resolution;
     const append = event.target.dataset.append === 'true';
     if (!files || files.length === 0) return;
+    await ingestFiles(cameraIndex, resolution, append, Array.from(files));
+    event.target.value = '';
+  };
 
+  // 统一的图片入库逻辑（点击上传 & 粘贴共用），使用全局 seq 排序
+  // 一次多个文件时，先按文件名自然排序，再依次分配 seq，避免浏览器给的顺序乱掉
+  async function ingestFiles(cameraIndex, resolution, append, files) {
     const camera = state.cameras[cameraIndex];
+    if (!camera) return;
     if (!append) {
       for (let img of camera.images[resolution]) if (img.url) URL.revokeObjectURL(img.url);
       camera.images[resolution] = [];
       state.uploadOrder = state.uploadOrder.filter(item => !(item.camIdx === cameraIndex && item.resolution === resolution));
     }
 
+    const orderedFiles = Array.from(files);
+    if (orderedFiles.length > 1) {
+      orderedFiles.sort((a, b) => naturalCompare(a.name, b.name));
+    }
+
     const newImages = [];
     let invalidCount = 0;
-    for (let file of files) {
+    for (let file of orderedFiles) {
       if (!isImageFile(file)) { invalidCount++; continue; }
       try {
         const base64 = await fileToBase64(file);
         const url = URL.createObjectURL(file);
-        newImages.push({ name: file.name, url, data: base64 });
-        state.uploadOrder.push({ camIdx: cameraIndex, resolution, fileName: file.name });
+        const seq = state.seqCounter++;
+        newImages.push({ name: file.name, url, data: base64, seq });
+        state.uploadOrder.push({ camIdx: cameraIndex, resolution, fileName: file.name, seq });
       } catch(e) { console.warn('读取失败', file.name, e); }
     }
     if (invalidCount > 0) showMessage(`⚠️ 过滤 ${invalidCount} 个非图片文件`, 2000);
-    if (newImages.length === 0 && files.length > 0) { showMessage('没有有效图片', 1800); event.target.value = ''; return; }
+    if (newImages.length === 0) { showMessage('没有有效图片', 1800); return; }
 
     const existing = camera.images[resolution] || [];
     const combined = [...existing, ...newImages];
-    const orderMap = new Map();
-    state.uploadOrder.forEach((item, idx) => {
-      const key = `${item.camIdx}_${item.resolution}_${item.fileName}`;
-      if (!orderMap.has(key)) orderMap.set(key, idx);
-    });
-    combined.sort((a, b) => {
-      const keyA = `${cameraIndex}_${resolution}_${a.name}`;
-      const keyB = `${cameraIndex}_${resolution}_${b.name}`;
-      const idxA = orderMap.has(keyA) ? orderMap.get(keyA) : Infinity;
-      const idxB = orderMap.has(keyB) ? orderMap.get(keyB) : Infinity;
-      return idxA - idxB;
-    });
+    combined.sort((a, b) => (a.seq || 0) - (b.seq || 0));
     camera.images[resolution] = combined;
     saveStateToStorage();
     updateStatsDisplay(cameraIndex);
-    event.target.value = '';
     checkAnyUploaded();
-    showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} ${append?'追加':'上传'} ${newImages.length} 张`, 1500);
-  };
+    showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} 追加 ${newImages.length} 张`, 1500);
+  }
+
+  // 粘贴处理：读取剪贴板中的图片文件
+  async function onPaste(e, camIdx) {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    const files = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    if (files.length === 0) {
+      return;
+    }
+    e.preventDefault();
+    state.activeCameraIndex = camIdx;
+    const res = state.pasteTargetRes;
+    await ingestFiles(camIdx, res, true, files);
+    saveStateToStorage();
+  }
 
   function checkAnyUploaded() {
     let hasAny = false;
@@ -1182,6 +1323,25 @@
     renderCameraGrid();
     hideAllSteps();
     document.getElementById('step3').classList.add('active');
+
+    document.addEventListener('paste', (e) => {
+      if (e.defaultPrevented) return;
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      const files = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) files.push(file);
+        }
+      }
+      if (files.length === 0) return;
+      e.preventDefault();
+      const camIdx = Math.min(state.activeCameraIndex, state.cameras.length - 1);
+      const res = state.pasteTargetRes;
+      ingestFiles(camIdx, res, true, files).then(() => saveStateToStorage());
+    });
   }
 
   window.addEventListener('DOMContentLoaded', initApp);
