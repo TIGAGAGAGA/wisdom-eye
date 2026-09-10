@@ -6,7 +6,6 @@
   <title>智慧之眼</title>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFPSURBVDhPpZM7S8NQGMbPcWrFVhQc7KIgLp2E6uTgJhQ3F/Eb+A2ELI4dOji5axcHXRy6iXS1gx1EtDhK61tqW9M0TdPcS+MHSdMTLvzwvve+POecXAL/rULpdrvBUCgUyrIsMYo8z1uNRqPNsiyyWq1W9rLfHhAIBMBut4u1Wi1qMpk0QByNRjYQdkwmk0RHRJxfq1UCgDgdHR2NhsNhvNfrEfB6vdq4Wq02GXby+XwQl8/Hr9frrRiW5VylUkkL+Hw+aDab9LXf7+ONcWx3u10iH8vUajUF7Ha7Uq/XKcHpdKLv9zscp9O5ysspVk4UCoXw8/F6vb/RoWFZ1rjt1eFwWHieZ3MYCAQIn6vV6uM9z3NqkWg0arTb7eW9SqWqa/F4XJctp2KxGFerVSqXy5pEImFLp9PbiJfLpazFYlEulcof9mNWfBrBzLpcLgeiKG6p+u8B+QY+i1AdP5SypgAAAABJRU5ErkJggg==">
   <style>
-    /* 全局重置 & 基础 */
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
     body {
       background: #0a0a0a;
@@ -28,7 +27,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* 标题 */
     .step-title {
       font-size: 1.8rem;
       margin-bottom: 1.8rem;
@@ -39,8 +37,6 @@
       color: transparent;
       display: inline-block;
     }
-    .form-group { margin-bottom: 2rem; }
-    label { display: block; margin-bottom: 0.6rem; font-weight: 500; color: #bbb; }
 
     input, select, button {
       padding: 0.7rem 1rem;
@@ -66,28 +62,7 @@
     }
     button:hover:not(:disabled) { background: #ff943e; transform: scale(1.02); }
 
-    /* 复选框组 */
-    .checkbox-group {
-      display: flex;
-      gap: 2rem;
-      margin: 1rem 0;
-      background: #1e1e1e;
-      padding: 1rem;
-      border-radius: 20px;
-      width: fit-content;
-    }
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    .checkbox-item input {
-      width: 1.2rem;
-      height: 1.2rem;
-      accent-color: #ff7a2f;
-    }
-
-    /* 步骤3 卡片 */
+    /* 摄像头网格：和之前步骤3一致 */
     .camera-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -99,6 +74,7 @@
       border-radius: 20px;
       padding: 1.2rem;
       border: 1px solid #2e2e2e;
+      position: relative;
     }
     .camera-name-input {
       width: 100%;
@@ -108,20 +84,6 @@
       margin-bottom: 1rem;
       font-weight: 500;
     }
-    .resolution-status {
-      display: flex;
-      gap: 1rem;
-      margin: 0.8rem 0;
-    }
-    .resolution-tag {
-      padding: 0.2rem 0.9rem;
-      border-radius: 30px;
-      font-size: 0.8rem;
-      font-weight: bold;
-    }
-    .resolution-tag.enabled { background: #ff7a2f; color: #000; }
-    .resolution-tag.disabled { background: #3a3a3a; color: #777; }
-
     .upload-buttons {
       display: flex;
       gap: 0.8rem;
@@ -170,7 +132,44 @@
       border: none;
     }
 
-    /* 步骤4 布局 */
+    /* 卡片右侧操作列：+ 和 垃圾桶 */
+    .camera-card-actions {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      z-index: 5;
+    }
+    .add-camera-btn, .delete-camera-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      font-size: 1.1rem;
+      line-height: 1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .add-camera-btn {
+      background: #2a5a7a;
+      color: #fff;
+      border: 1px solid #ff7a2f88;
+      font-size: 1.3rem;
+    }
+    .add-camera-btn:hover { background: #3a7aaa; transform: scale(1.08); }
+    .delete-camera-btn {
+      background: #5a2a2a;
+      color: #ffaa88;
+      border: 1px solid #ff5e5e88;
+    }
+    .delete-camera-btn:hover { background: #8a3a3a; transform: scale(1.08); }
+
     #step4 { padding: 0; max-width: 100%; margin: 0; height: 100vh; display: flex; flex-direction: column; }
     #step4:not(.active) { display: none !important; }
 
@@ -248,7 +247,7 @@
       border-radius: 16px;
       padding: 0;
       width: 100%;
-      display: grid;  /* grid 模式 */
+      display: grid;
     }
     .comparison-container .camera-column {
       display: flex;
@@ -263,9 +262,8 @@
       height: 100%;
     }
 
-    /* 设备名称放大 */
     .column-header h3 {
-      font-size: 1.5rem !important;   /* 放大设备名称 */
+      font-size: 1.5rem !important;
       font-weight: 700;
       word-break: break-word;
       color: #ffaa66;
@@ -392,8 +390,6 @@
       pointer-events: none;
     }
 
-    /* 移除右下角提示：不再显示滚轮缩放那一行字 */
-    /* .zoom-hint 已从 HTML 中移除，但保留以防万一 */
     .zoom-hint { display: none; }
 
     @media (max-width: 800px) {
@@ -416,43 +412,16 @@
 </head>
 <body>
 
-<!-- 步骤1 -->
-<div id="step1" class="step-container">
-  <h2 class="step-title">⚡ 步骤1：选择对比摄像头数量</h2>
-  <div class="form-group">
-    <label>📷 镜头数量（1-10）：</label>
-    <input type="number" id="cameraCount" min="1" max="10" value="2" style="width:140px;">
-  </div>
-  <button onclick="goToStep2()">下一步 →</button>
-</div>
-
-<!-- 步骤2 -->
-<div id="step2" class="step-container">
-  <h2 class="step-title">🎥 步骤2：选择分辨率</h2>
-  <div class="form-group">
-    <label>🔍 勾选需要对比的分辨率：</label>
-    <div class="checkbox-group">
-      <div class="checkbox-item"><input type="checkbox" id="res4k" checked> <label>4K (超清)</label></div>
-      <div class="checkbox-item"><input type="checkbox" id="res1080p" checked> <label>1080p (全高清)</label></div>
-    </div>
-  </div>
-  <div class="step-nav">
-    <button onclick="goToStep1()">← 上一步</button>
-    <button onclick="goToStep3()">下一步 →</button>
-  </div>
-</div>
-
-<!-- 步骤3 -->
-<div id="step3" class="step-container">
-  <h2 class="step-title">📸 步骤3：配置摄像头 & 上传图片</h2>
+<!-- 配置与上传（初始界面） -->
+<div id="step3" class="step-container active">
+  <h2 class="step-title">📸 配置摄像头 & 上传图片</h2>
   <div id="cameraGrid" class="camera-grid"></div>
   <div class="step-nav">
-    <button onclick="goToStep2()">← 上一步</button>
     <button id="step3NextBtn" onclick="goToStep4()">🚀 开始对比 →</button>
   </div>
 </div>
 
-<!-- 步骤4 -->
+<!-- 对比视图 -->
 <div id="step4" class="step-container">
   <div class="step4-header">
     <h2 class="step-title">🔍 图像对比 <span>右侧翻页</span></h2>
@@ -477,14 +446,13 @@
       <div class="nav-info" id="pageIndicator">1 / 1</div>
     </div>
   </div>
-  <!-- 右下角提示已移除 -->
 </div>
 
 <script>
   // ============================================================
   // 1. 持久化工具
   // ============================================================
-  const STORAGE_KEY = 'wisdom_eye_state_v2';
+  const STORAGE_KEY = 'wisdom_eye_state_v3';
 
   function saveStateToStorage() {
     try {
@@ -502,7 +470,7 @@
         currentImgIndex: state.currentImgIndex,
         syncScale: state.syncScale,
         syncTranslate: state.syncTranslate,
-        uploadOrder: state.uploadOrder || []   // 新增：记录上传顺序
+        uploadOrder: state.uploadOrder || []
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) { console.warn('保存失败', e); }
@@ -556,19 +524,19 @@
   // 2. 全局状态
   // ============================================================
   const state = {
-    cameraCount: 2,
+    cameraCount: 1,
     resolutions: { '4k': true, '1080p': true },
     cameras: [],
     syncScale: 1,
     syncTranslate: { x: 0, y: 0 },
     currentRes: '4k',
     currentImgIndex: 0,
-    uploadOrder: []   // 存储上传顺序：每个元素 { camIdx, resolution, fileName }
+    uploadOrder: []
   };
 
   const saved = loadStateFromStorage();
   if (saved) {
-    state.cameraCount = saved.cameraCount || 2;
+    state.cameraCount = saved.cameraCount || 1;
     state.resolutions = saved.resolutions || { '4k': true, '1080p': true };
     state.cameras = saved.cameras || [];
     state.currentRes = saved.currentRes || '4k';
@@ -586,13 +554,15 @@
       state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
     }
   }
+  // 强制两个分辨率都可用，避免旧存储导致按钮变灰
+  state.resolutions = { '4k': true, '1080p': true };
   state.cameras.forEach(cam => {
     if (!cam.images) cam.images = { '4k': [], '1080p': [] };
     if (!cam.images['4k']) cam.images['4k'] = [];
     if (!cam.images['1080p']) cam.images['1080p'] = [];
   });
   if (!state.resolutions[state.currentRes]) {
-    state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+    state.currentRes = '4k';
   }
 
   const individualStates = new WeakMap();
@@ -628,60 +598,23 @@
   // ============================================================
   // 3. 步骤导航
   // ============================================================
-  function goToStep1() {
-    hideAllSteps();
-    document.getElementById('step1').classList.add('active');
-    document.getElementById('cameraCount').value = state.cameraCount;
-  }
-  function goToStep2() {
-    let count = parseInt(document.getElementById('cameraCount').value);
-    if (isNaN(count) || count < 1 || count > 10) { alert('请输入1-10'); return; }
-    state.cameraCount = count;
-    state.cameras = [];
-    for (let i = 0; i < state.cameraCount; i++) {
-      state.cameras.push({ name: `摄像头${i+1}`, images: { '4k': [], '1080p': [] } });
-    }
-    state.uploadOrder = [];
-    document.getElementById('res4k').checked = state.resolutions['4k'];
-    document.getElementById('res1080p').checked = state.resolutions['1080p'];
-    saveStateToStorage();
-    hideAllSteps();
-    document.getElementById('step2').classList.add('active');
-  }
-  function goToStep3() {
-    const res4k = document.getElementById('res4k').checked;
-    const res1080p = document.getElementById('res1080p').checked;
-    if (!res4k && !res1080p) { alert('至少勾选一个分辨率'); return; }
-    state.resolutions['4k'] = res4k;
-    state.resolutions['1080p'] = res1080p;
-    if (!state.resolutions[state.currentRes]) {
-      state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
-    }
-    state.syncScale = 1; state.syncTranslate = { x: 0, y: 0 };
-    state.currentImgIndex = 0;
-    saveStateToStorage();
-    renderCameraGrid();
-    hideAllSteps();
-    document.getElementById('step3').classList.add('active');
-  }
   function backToStep3() {
     renderCameraGrid();
     hideAllSteps();
     document.getElementById('step3').classList.add('active');
   }
+
   function goToStep4() {
-    let allValid = true;
+    let hasAny = false;
     for (let cam of state.cameras) {
-      let total = cam.images['4k'].length + cam.images['1080p'].length;
-      if (total === 0) { allValid = false; break; }
+      if (cam.images['4k'].length + cam.images['1080p'].length > 0) { hasAny = true; break; }
     }
-    if (!allValid) {
-      alert('每个摄像头至少上传一张图片');
-      goToStep3();  // 兜底回到上传页,避免停留在全黑/无可见步骤状态
+    if (!hasAny) {
+      alert('请至少上传一张图片');
       return;
     }
     if (!state.resolutions[state.currentRes]) {
-      state.currentRes = state.resolutions['4k'] ? '4k' : '1080p';
+      state.currentRes = '4k';
     }
     state.currentImgIndex = 0;
     state.syncScale = 1; state.syncTranslate = { x: 0, y: 0 };
@@ -693,49 +626,81 @@
   }
 
   // ============================================================
-  // 4. 摄像头配置 & 图片上传 (按顺序记录)
+  // 4. 摄像头配置 & 图片上传
   // ============================================================
   function clearResolutionImages(camera, resolution) {
     const imgArray = camera.images[resolution];
     for (let img of imgArray) if (img.url) URL.revokeObjectURL(img.url);
     camera.images[resolution] = [];
-    // 清理顺序记录
-    state.uploadOrder = state.uploadOrder.filter(item => !(item.resolution === resolution && state.cameras.indexOf(camera) === item.camIdx));
+    const camIdx = state.cameras.indexOf(camera);
+    state.uploadOrder = state.uploadOrder.filter(item => !(item.resolution === resolution && camIdx === item.camIdx));
     saveStateToStorage();
   }
 
   function renderCameraGrid() {
     const grid = document.getElementById('cameraGrid');
     grid.innerHTML = '';
-    for (let i = 0; i < state.cameraCount; i++) {
+    state.cameraCount = state.cameras.length;
+    for (let i = 0; i < state.cameras.length; i++) {
       const cam = state.cameras[i];
       const card = document.createElement('div');
       card.className = 'camera-card';
+      const isFirst = i === 0;
       card.innerHTML = `
-        <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" onchange="updateCameraName(${i}, this.value)">
-        <div class="resolution-status">
-          <span class="resolution-tag ${state.resolutions['4k'] ? 'enabled' : 'disabled'}">4K</span>
-          <span class="resolution-tag ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}">1080P</span>
+        <div class="camera-card-actions">
+          <button class="add-camera-btn" title="增加摄像头" onclick="addCamera()">+</button>
+          ${!isFirst ? `<button class="delete-camera-btn" title="删除此摄像头" onclick="removeCamera(${i})">🗑</button>` : ''}
         </div>
+        <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" onchange="updateCameraName(${i}, this.value)">
         <div class="upload-buttons">
-          <button class="upload-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" ${!state.resolutions['4k'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '4k', false)">📤 上传4K</button>
-          <button class="upload-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" ${!state.resolutions['1080p'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '1080p', false)">📤 上传1080P</button>
+          <button class="upload-btn enabled" onclick="triggerUpload(${i}, '4k', false)">📤 上传4K</button>
+          <button class="upload-btn enabled" onclick="triggerUpload(${i}, '1080p', false)">📤 上传1080P</button>
         </div>
         <div style="display:flex; gap:0.5rem; margin:0.3rem 0;">
-          <button class="append-btn ${state.resolutions['4k'] ? 'enabled' : 'disabled'}" ${!state.resolutions['4k'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '4k', true)">➕ 追加4K</button>
-          <button class="append-btn ${state.resolutions['1080p'] ? 'enabled' : 'disabled'}" ${!state.resolutions['1080p'] ? 'disabled' : ''} onclick="triggerUpload(${i}, '1080p', true)">➕ 追加1080P</button>
+          <button class="append-btn enabled" onclick="triggerUpload(${i}, '4k', true)">➕ 追加4K</button>
+          <button class="append-btn enabled" onclick="triggerUpload(${i}, '1080p', true)">➕ 追加1080P</button>
         </div>
         <div class="image-stats" id="stats_${i}">
           <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
-          <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
-          <button class="clear-btn" onclick="clearCameraResolution(${i}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length===0 ? 'disabled' : ''}>空1080P</button>
+          <button class="clear-btn" onclick="clearCameraResolution(${i}, '4k')" ${cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
+          <button class="clear-btn" onclick="clearCameraResolution(${i}, '1080p')" ${cam.images['1080p'].length===0 ? 'disabled' : ''}>空1080P</button>
         </div>
         <input type="file" id="fileInput${i}" multiple accept="image/*" style="display:none" onchange="handleFileUpload(${i}, event)">
       `;
       grid.appendChild(card);
     }
-    checkAllUploaded();
+    checkAnyUploaded();
   }
+
+  window.addCamera = function() {
+    state.cameras.push({ name: `摄像头${state.cameras.length + 1}`, images: { '4k': [], '1080p': [] } });
+    state.cameraCount = state.cameras.length;
+    saveStateToStorage();
+    renderCameraGrid();
+    showMessage('已增加摄像头', 800);
+  };
+
+  window.removeCamera = function(index) {
+    if (state.cameras.length <= 1) return;
+    const cam = state.cameras[index];
+    ['4k', '1080p'].forEach(res => {
+      (cam.images[res] || []).forEach(img => { if (img.url) URL.revokeObjectURL(img.url); });
+    });
+    state.cameras.splice(index, 1);
+    state.cameraCount = state.cameras.length;
+    state.uploadOrder = state.uploadOrder
+      .filter(item => item.camIdx !== index)
+      .map(item => item.camIdx > index ? { ...item, camIdx: item.camIdx - 1 } : item);
+    state.cameras.forEach((c, i) => {
+      if (/^摄像头\d+$/.test(c.name)) c.name = `摄像头${i + 1}`;
+    });
+    if (state.currentImgIndex >= getCurrentMaxValidIndex()) {
+      state.currentImgIndex = Math.max(0, getCurrentMaxValidIndex() - 1);
+    }
+    saveStateToStorage();
+    renderCameraGrid();
+    showMessage('已移除该摄像头', 800);
+  };
 
   window.clearCameraResolution = function(camIdx, resolution) {
     const cam = state.cameras[camIdx];
@@ -743,7 +708,7 @@
     clearResolutionImages(cam, resolution);
     updateStatsDisplay(camIdx);
     saveStateToStorage();
-    checkAllUploaded();
+    checkAnyUploaded();
     showMessage(`已清空 ${resolution.toUpperCase()} 图片`, 1000);
   };
 
@@ -753,8 +718,8 @@
     if (statsDiv) {
       statsDiv.innerHTML = `
         <span>🖼️ 4K: ${cam.images['4k'].length} 张 &nbsp;|&nbsp; 1080P: ${cam.images['1080p'].length} 张</span>
-        <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${!state.resolutions['4k'] || cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
-        <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${!state.resolutions['1080p'] || cam.images['1080p'].length===0 ? 'disabled' : ''}>空1080P</button>
+        <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '4k')" ${cam.images['4k'].length===0 ? 'disabled' : ''}>清4K</button>
+        <button class="clear-btn" onclick="clearCameraResolution(${camIdx}, '1080p')" ${cam.images['1080p'].length===0 ? 'disabled' : ''}>空1080P</button>
       `;
     }
   }
@@ -780,7 +745,6 @@
 
     const camera = state.cameras[cameraIndex];
     if (!append) {
-      // 覆盖：清空该分辨率所有图片，并清除对应的顺序记录
       for (let img of camera.images[resolution]) if (img.url) URL.revokeObjectURL(img.url);
       camera.images[resolution] = [];
       state.uploadOrder = state.uploadOrder.filter(item => !(item.camIdx === cameraIndex && item.resolution === resolution));
@@ -794,17 +758,14 @@
         const base64 = await fileToBase64(file);
         const url = URL.createObjectURL(file);
         newImages.push({ name: file.name, url, data: base64 });
-        // 记录上传顺序（追加模式也记录新文件）
         state.uploadOrder.push({ camIdx: cameraIndex, resolution, fileName: file.name });
       } catch(e) { console.warn('读取失败', file.name, e); }
     }
     if (invalidCount > 0) showMessage(`⚠️ 过滤 ${invalidCount} 个非图片文件`, 2000);
     if (newImages.length === 0 && files.length > 0) { showMessage('没有有效图片', 1800); event.target.value = ''; return; }
 
-    // 合并已有图片和新图片，按上传顺序排序（根据 uploadOrder）
     const existing = camera.images[resolution] || [];
     const combined = [...existing, ...newImages];
-    // 按 uploadOrder 排序：只保留顺序中存在的图片，其余追加到末尾（兼容旧数据）
     const orderMap = new Map();
     state.uploadOrder.forEach((item, idx) => {
       const key = `${item.camIdx}_${item.resolution}_${item.fileName}`;
@@ -821,29 +782,31 @@
     saveStateToStorage();
     updateStatsDisplay(cameraIndex);
     event.target.value = '';
-    checkAllUploaded();
+    checkAnyUploaded();
     showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} ${append?'追加':'上传'} ${newImages.length} 张`, 1500);
   };
 
-  function checkAllUploaded() {
-    let allHasImages = true;
+  function checkAnyUploaded() {
+    let hasAny = false;
     for (let cam of state.cameras) {
-      if (cam.images['4k'].length + cam.images['1080p'].length === 0) { allHasImages = false; break; }
+      if (cam.images['4k'].length + cam.images['1080p'].length > 0) { hasAny = true; break; }
     }
     const nextBtn = document.getElementById('step3NextBtn');
-    if (nextBtn) nextBtn.disabled = !allHasImages;
+    if (nextBtn) nextBtn.disabled = !hasAny;
   }
 
   // ============================================================
-  // 5. 对比视图 (步骤4) - 按顺序展示
+  // 5. 对比视图
   // ============================================================
   function getCurrentMaxValidIndex() {
     let minLen = Infinity;
+    let hasAny = false;
     for (let cam of state.cameras) {
       const list = cam.images[state.currentRes];
-      if (list && list.length) minLen = Math.min(minLen, list.length);
+      if (list && list.length) { hasAny = true; minLen = Math.min(minLen, list.length); }
       else minLen = 0;
     }
+    if (!hasAny) return 0;
     return minLen === Infinity ? 0 : minLen;
   }
 
@@ -912,7 +875,7 @@
 
   function refreshAllImagesInStep4() {
     resetIndividualStates();
-    for (let i = 0; i < state.cameraCount; i++) {
+    for (let i = 0; i < state.cameras.length; i++) {
       const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
       if (!viewerDiv) continue;
       const imgEl = viewerDiv.querySelector('img');
@@ -987,7 +950,7 @@
   // ============================================================
   function getDivisors(n) { const d=[]; for(let i=1;i<=n;i++) if(n%i===0) d.push(i); return d; }
   function populateLayoutSelectors() {
-    const n = state.cameraCount;
+    const n = state.cameras.length;
     const rowSel = document.getElementById('rowSelector');
     const colSel = document.getElementById('colSelector');
     if (!rowSel || !colSel) return;
@@ -1003,7 +966,7 @@
     colSel.value = String(n / bestR);
   }
   function onRowsChange() {
-    const n = state.cameraCount;
+    const n = state.cameras.length;
     const rowSel = document.getElementById('rowSelector');
     const colSel = document.getElementById('colSelector');
     const rows = parseInt(rowSel.value);
@@ -1011,7 +974,7 @@
     if (n % rows === 0) { colSel.value = String(n / rows); applyLayout(); }
   }
   function onColsChange() {
-    const n = state.cameraCount;
+    const n = state.cameras.length;
     const rowSel = document.getElementById('rowSelector');
     const colSel = document.getElementById('colSelector');
     const cols = parseInt(colSel.value);
@@ -1103,12 +1066,13 @@
   function renderComparisonView() {
     const container = document.getElementById('comparisonContainer');
     container.innerHTML = '';
-    if (state.cameraCount === 0) return;
+    const camCount = state.cameras.length;
+    if (camCount === 0) return;
     let resOptions = '';
     if (state.resolutions['4k']) resOptions += `<option value="4k">4K</option>`;
     if (state.resolutions['1080p']) resOptions += `<option value="1080p">1080P</option>`;
 
-    for (let i = 0; i < state.cameraCount; i++) {
+    for (let i = 0; i < camCount; i++) {
       const camera = state.cameras[i];
       const currentResImgs = camera.images[state.currentRes];
       let imgOptions = '';
@@ -1136,7 +1100,7 @@
     const allImgSelects = document.querySelectorAll('.img-selector');
 
     const refreshAllImages = () => {
-      for (let i = 0; i < state.cameraCount; i++) {
+      for (let i = 0; i < camCount; i++) {
         const viewerDiv = document.querySelector(`.image-viewer[data-viewer-idx="${i}"]`);
         if (!viewerDiv) continue;
         const imgEl = viewerDiv.querySelector('img');
@@ -1153,7 +1117,7 @@
     };
 
     const rebuildImgSelectors = () => {
-      for (let i = 0; i < state.cameraCount; i++) {
+      for (let i = 0; i < camCount; i++) {
         const camera = state.cameras[i];
         const resImages = camera.images[state.currentRes];
         const selector = document.querySelector(`.img-selector[data-camidx="${i}"]`);
@@ -1215,26 +1179,22 @@
   // 8. 初始化
   // ============================================================
   function initApp() {
-    document.getElementById('res4k').checked = state.resolutions['4k'];
-    document.getElementById('res1080p').checked = state.resolutions['1080p'];
-    document.getElementById('cameraCount').value = state.cameraCount;
-    let readyForStep4 = state.cameras.length > 0 && state.cameras.every(cam =>
-      cam.images['4k'].length > 0 || cam.images['1080p'].length > 0
-    );
-    if (readyForStep4) goToStep4();
-    else if (state.cameras.length > 0) goToStep3();
-    else goToStep1();
+    renderCameraGrid();
+    hideAllSteps();
+    document.getElementById('step3').classList.add('active');
   }
 
   window.addEventListener('DOMContentLoaded', initApp);
   window.addEventListener('beforeunload', () => saveStateToStorage());
 
-  // 暴露全局
-  window.goToStep1 = goToStep1; window.goToStep2 = goToStep2; window.goToStep3 = goToStep3;
-  window.goToStep4 = goToStep4; window.backToStep3 = backToStep3;
-  window.resetZoomAndPan = resetZoomAndPan; window.navigateImages = navigateImages;
-  window.zoomTo200 = zoomTo200; window.applyLayout = applyLayout;
-  window.onRowsChange = onRowsChange; window.onColsChange = onColsChange;
+  window.backToStep3 = backToStep3;
+  window.goToStep4 = goToStep4;
+  window.resetZoomAndPan = resetZoomAndPan;
+  window.navigateImages = navigateImages;
+  window.zoomTo200 = zoomTo200;
+  window.applyLayout = applyLayout;
+  window.onRowsChange = onRowsChange;
+  window.onColsChange = onColsChange;
   window.populateLayoutSelectors = populateLayoutSelectors;
 </script>
 </body>
