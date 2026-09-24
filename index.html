@@ -74,11 +74,23 @@
       padding: 1.2rem;
       border: 1px solid #2e2e2e;
       position: relative;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      cursor: grab;
+    }
+    .camera-card:active {
+      cursor: grabbing;
     }
     .camera-card.active-paste {
       border-color: #ff7a2f;
       box-shadow: 0 0 0 1px #ff7a2f, 0 4px 16px rgba(255,122,47,0.25);
+    }
+    .camera-card.drag-over {
+      border-color: #ffaa66;
+      box-shadow: 0 0 0 2px #ffaa66, 0 4px 16px rgba(255,170,102,0.4);
+    }
+    .camera-card.dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
     }
     .camera-name-input {
       width: 100%;
@@ -87,6 +99,16 @@
       border: 1px solid #3a3a3a;
       margin-bottom: 1rem;
       font-weight: 500;
+      cursor: text;
+      user-select: text;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+    }
+    .camera-name-input:focus {
+      outline: none;
+      border-color: #ff7a2f;
+      box-shadow: 0 0 0 2px rgba(255,122,47,0.3);
     }
     .upload-buttons {
       display: flex;
@@ -215,11 +237,7 @@
       margin-bottom: 0;
     }
     .step4-header .step-title span {
-      font-size: 0.65rem;
-      background: #2a2a2a;
-      padding: 0.05rem 0.6rem;
-      border-radius: 30px;
-      font-weight: 400;
+      display: none;
     }
     .layout-controls {
       display: flex;
@@ -349,6 +367,44 @@
       transition: none;
     }
 
+    .resolution-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ffaa66;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.8rem;
+      border-radius: 40px;
+      backdrop-filter: blur(4px);
+      border: 1px solid #ff7a2f88;
+      z-index: 20;
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
+    .zoom-indicator {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ffaa66;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.8rem;
+      border-radius: 40px;
+      backdrop-filter: blur(4px);
+      border: 1px solid #ff7a2f88;
+      z-index: 20;
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    }
+
     .global-nav-panel {
       width: 64px;
       background: #111111cc;
@@ -419,6 +475,22 @@
 
     .zoom-hint { display: none; }
 
+    .header-back-btn {
+      color: #ffffff !important;
+      border: 1px solid #ffffff44 !important;
+    }
+    .header-back-btn:hover {
+      background: #3a3a3a !important;
+    }
+
+    .reset-btn {
+      color: #ffffff !important;
+      border: 1px solid #ffffff44 !important;
+    }
+    .reset-btn:hover {
+      background: #3a3a3a !important;
+    }
+
     @media (max-width: 800px) {
       .step4-wrapper { flex-direction: column; height: auto; min-height: 70vh; }
       .comparison-container { flex-direction: column; height: auto; min-height: 50vh; }
@@ -434,6 +506,13 @@
       }
       .global-nav-btn { width: 44px; height: 44px; font-size: 1.4rem; }
       .column-header h3 { font-size: 1.3rem !important; }
+      .resolution-badge, .zoom-indicator {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.6rem;
+        bottom: 8px;
+      }
+      .resolution-badge { left: 8px; }
+      .zoom-indicator { right: 8px; }
     }
   </style>
 </head>
@@ -451,7 +530,7 @@
 <!-- 对比视图 -->
 <div id="step4" class="step-container">
   <div class="step4-header">
-    <h2 class="step-title">🔍 图像对比 <span>右侧翻页</span></h2>
+    <h2 class="step-title">🔍 图像对比</h2>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <div class="layout-controls">
         <span class="label">布局</span>
@@ -461,8 +540,8 @@
         <span class="label">列</span>
       </div>
       <button class="zoom200-btn" onclick="zoomTo200()">🔍 200%</button>
-      <button onclick="resetZoomAndPan()" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">🔄 重置</button>
-      <button onclick="backToStep3()" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">← 返回</button>
+      <button onclick="resetZoomAndPan()" class="reset-btn" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">🔄 重置</button>
+      <button onclick="backToStep3()" class="header-back-btn" style="background:#2d2d2d; padding:0.2rem 0.7rem; font-size:0.7rem; border-radius:30px; border:1px solid #444;">← 返回</button>
     </div>
   </div>
   <div class="step4-wrapper">
@@ -615,6 +694,13 @@
   if (state.activeCameraIndex >= state.cameras.length) state.activeCameraIndex = 0;
   if (state.pasteTargetRes !== '4k' && state.pasteTargetRes !== '1080p') state.pasteTargetRes = '4k';
 
+  // 全局校验：确保所有摄像头名称非空
+  state.cameras.forEach((cam, idx) => {
+    if (!cam.name || String(cam.name).trim() === '') {
+      cam.name = `摄像头${idx + 1}`;
+    }
+  });
+
   const individualStates = new WeakMap();
   function getIndividualState(viewer) {
     if (!individualStates.has(viewer)) {
@@ -631,8 +717,6 @@
     return ALLOWED_EXTENSIONS.includes(ext);
   };
 
-  // 文件名自然排序：把文件名中的数字块按数值比较，其余按本地化字符串比较
-  // 例如 img2.jpg < img10.jpg，1.jpg < 2.jpg < 10.jpg
   function naturalCompare(aName, bName) {
     const a = String(aName || '');
     const b = String(bName || '');
@@ -683,6 +767,20 @@
   }
 
   function goToStep4() {
+    // 校验所有摄像头名称非空
+    let hasEmptyName = false;
+    state.cameras.forEach((cam, idx) => {
+      if (!cam.name || String(cam.name).trim() === '') {
+        cam.name = `摄像头${idx + 1}`;
+        hasEmptyName = true;
+      }
+    });
+    if (hasEmptyName) {
+      saveStateToStorage();
+      renderCameraGrid();
+      showMessage('⚠️ 部分设备名称为空，已自动恢复默认名称', 2000);
+    }
+
     let hasAny = false;
     for (let cam of state.cameras) {
       if (cam.images['4k'].length + cam.images['1080p'].length > 0) { hasAny = true; break; }
@@ -723,16 +821,21 @@
 
     for (let i = 0; i < state.cameras.length; i++) {
       const cam = state.cameras[i];
+      // 确保名称非空
+      if (!cam.name || String(cam.name).trim() === '') {
+        cam.name = `摄像头${i + 1}`;
+      }
       const card = document.createElement('div');
       card.className = 'camera-card' + (i === state.activeCameraIndex ? ' active-paste' : '');
       card.dataset.camIdx = i;
+      card.draggable = false;
       const isFirst = i === 0;
       card.innerHTML = `
         <div class="camera-card-actions">
           <button class="add-camera-btn" title="增加摄像头" onclick="addCamera()">+</button>
           ${!isFirst ? `<button class="delete-camera-btn" title="删除此摄像头" onclick="removeCamera(${i})">🗑</button>` : ''}
         </div>
-        <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" onchange="updateCameraName(${i}, this.value)">
+        <input type="text" class="camera-name-input" value="${escapeHtml(cam.name)}" data-camidx="${i}" onchange="updateCameraName(${i}, this.value)" onblur="validateCameraName(${i}, this)">
         <div class="upload-buttons">
           <button class="upload-btn enabled" onclick="triggerUpload(${i}, '4k', false)">📤 上传4K</button>
           <button class="upload-btn enabled" onclick="triggerUpload(${i}, '1080p', false)">📤 上传1080P</button>
@@ -753,15 +856,103 @@
         </div>
         <input type="file" id="fileInput${i}" multiple accept="image/*" style="display:none" onchange="handleFileUpload(${i}, event)">
       `;
+
       card.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button') || e.target.closest('input')) return;
+        const interactive = e.target.closest('input, button, select, textarea, .tag-btn, .clear-btn, .append-btn, .upload-btn');
+        if (interactive) {
+          card.draggable = false;
+          return;
+        }
+        card.draggable = true;
         setActiveCamera(i);
       });
+
       card.addEventListener('paste', (e) => onPaste(e, i));
+
+      card.addEventListener('dragstart', (e) => {
+        if (e.target.closest('input, button, select, textarea, .tag-btn, .clear-btn, .append-btn, .upload-btn')) {
+          e.preventDefault();
+          return;
+        }
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', i);
+        e.dataTransfer.setData('application/x-cam-index', i);
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        card.draggable = false;
+        document.querySelectorAll('.camera-card').forEach(c => c.classList.remove('drag-over'));
+      });
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!card.classList.contains('dragging')) {
+          card.classList.add('drag-over');
+        }
+      });
+
+      card.addEventListener('dragleave', () => {
+        card.classList.remove('drag-over');
+      });
+
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const fromIndex = parseInt(e.dataTransfer.getData('application/x-cam-index'));
+        const toIndex = i;
+        if (isNaN(fromIndex) || fromIndex === toIndex) return;
+
+        const movedItem = state.cameras.splice(fromIndex, 1)[0];
+        state.cameras.splice(toIndex, 0, movedItem);
+
+        state.uploadOrder.forEach(item => {
+          if (item.camIdx === fromIndex) {
+            item.camIdx = toIndex;
+          } else if (fromIndex < toIndex) {
+            if (item.camIdx > fromIndex && item.camIdx <= toIndex) item.camIdx--;
+          } else {
+            if (item.camIdx >= toIndex && item.camIdx < fromIndex) item.camIdx++;
+          }
+        });
+
+        state.cameras.forEach((c, idx) => {
+          if (/^摄像头\d+$/.test(c.name)) c.name = `摄像头${idx + 1}`;
+        });
+
+        if (state.activeCameraIndex === fromIndex) {
+          state.activeCameraIndex = toIndex;
+        } else if (fromIndex < toIndex) {
+          if (state.activeCameraIndex > fromIndex && state.activeCameraIndex <= toIndex) state.activeCameraIndex--;
+        } else {
+          if (state.activeCameraIndex >= toIndex && state.activeCameraIndex < fromIndex) state.activeCameraIndex++;
+        }
+
+        saveStateToStorage();
+        renderCameraGrid();
+        showMessage(`已移动摄像头 ${fromIndex + 1} → ${toIndex + 1}`, 800);
+      });
+
       grid.appendChild(card);
     }
     checkAnyUploaded();
   }
+
+  // 校验摄像头名称非空（失焦时触发）
+  window.validateCameraName = function(index, inputEl) {
+    const val = inputEl.value;
+    if (!val || val.trim() === '') {
+      state.cameras[index].name = `摄像头${index + 1}`;
+      inputEl.value = state.cameras[index].name;
+      showMessage(`⚠️ 设备名称不能为空，已恢复为「${state.cameras[index].name}」`, 1800);
+    } else {
+      state.cameras[index].name = val.trim();
+      inputEl.value = state.cameras[index].name;
+    }
+    saveStateToStorage();
+  };
 
   window.setPasteTarget = function(camIdx, res) {
     state.activeCameraIndex = camIdx;
@@ -844,7 +1035,11 @@
 
   function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
   window.updateCameraName = function(index, name) {
-    state.cameras[index].name = name;
+    if (!name || String(name).trim() === '') {
+      // 不立即更新，等失焦时统一处理
+      return;
+    }
+    state.cameras[index].name = String(name).trim();
     saveStateToStorage();
   };
 
@@ -864,8 +1059,6 @@
     event.target.value = '';
   };
 
-  // 统一的图片入库逻辑（点击上传 & 粘贴共用），使用全局 seq 排序
-  // 一次多个文件时，先按文件名自然排序，再依次分配 seq，避免浏览器给的顺序乱掉
   async function ingestFiles(cameraIndex, resolution, append, files) {
     const camera = state.cameras[cameraIndex];
     if (!camera) return;
@@ -905,7 +1098,6 @@
     showMessage(`✅ 摄像头${cameraIndex+1} ${resolution.toUpperCase()} 追加 ${newImages.length} 张`, 1500);
   }
 
-  // 粘贴处理：读取剪贴板中的图片文件
   async function onPaste(e, camIdx) {
     const items = e.clipboardData && e.clipboardData.items;
     if (!items) return;
@@ -1025,6 +1217,7 @@
       if (targetImg && targetImg.url) imgEl.src = targetImg.url;
       else imgEl.src = '';
       applyTransformToImage(imgEl);
+      updateResolutionBadge(viewerDiv, targetImg);
     }
     const total = getCurrentMaxValidIndex();
     updatePageIndicator(total);
@@ -1045,11 +1238,36 @@
     return null;
   }
 
+  function updateResolutionBadge(viewerDiv, imgItem) {
+    let badge = viewerDiv.querySelector('.resolution-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'resolution-badge';
+      viewerDiv.appendChild(badge);
+    }
+    if (!imgItem || !imgItem.data) {
+      badge.textContent = '--';
+      return;
+    }
+    const img = new Image();
+    img.onload = function() {
+      badge.textContent = `${this.naturalWidth}×${this.naturalHeight}`;
+    };
+    img.onerror = function() {
+      badge.textContent = '?';
+    };
+    img.src = imgItem.url || imgItem.data;
+  }
+
   function updateZoomIndicator(viewer) {
     let zoom = state.syncScale;
     if (individualStates.has(viewer)) zoom = individualStates.get(viewer).scale;
     let indicator = viewer.querySelector('.zoom-indicator');
-    if (!indicator) { indicator = document.createElement('div'); indicator.className = 'zoom-indicator'; viewer.appendChild(indicator); }
+    if (!indicator) { 
+      indicator = document.createElement('div'); 
+      indicator.className = 'zoom-indicator'; 
+      viewer.appendChild(indicator); 
+    }
     indicator.textContent = `🔍 ${Math.round(zoom*100)}%`;
   }
 
@@ -1215,6 +1433,10 @@
 
     for (let i = 0; i < camCount; i++) {
       const camera = state.cameras[i];
+      // 确保名称非空
+      if (!camera.name || String(camera.name).trim() === '') {
+        camera.name = `摄像头${i + 1}`;
+      }
       const currentResImgs = camera.images[state.currentRes];
       let imgOptions = '';
       if (currentResImgs && currentResImgs.length) {
@@ -1250,6 +1472,7 @@
         if (targetImg && targetImg.url) imgEl.src = targetImg.url;
         else imgEl.src = '';
         applyTransformToImage(imgEl);
+        updateResolutionBadge(viewerDiv, targetImg);
       }
       const total = getCurrentMaxValidIndex();
       updatePageIndicator(total);
@@ -1320,6 +1543,12 @@
   // 8. 初始化
   // ============================================================
   function initApp() {
+    // 确保初始状态名称非空
+    state.cameras.forEach((cam, idx) => {
+      if (!cam.name || String(cam.name).trim() === '') {
+        cam.name = `摄像头${idx + 1}`;
+      }
+    });
     renderCameraGrid();
     hideAllSteps();
     document.getElementById('step3').classList.add('active');
