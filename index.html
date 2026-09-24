@@ -27,9 +27,43 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* 标题行：标题 + 右侧一键清空按钮 */
+    .step3-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 1.8rem;
+    }
+    .step3-title-row .step-title {
+      margin-bottom: 0;
+    }
+    .clear-all-btn {
+      background: #5a2a2a;
+      color: #ffaa88;
+      border: 1px solid #ff5e5e88;
+      padding: 0.35rem 1rem;
+      font-size: 0.8rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .clear-all-btn:hover:not(:disabled) {
+      background: #8a3a3a;
+      transform: scale(1.03);
+    }
+    .clear-all-btn:disabled {
+      background: #3a3a3a;
+      color: #666;
+      cursor: not-allowed;
+      border-color: #444;
+    }
+
     .step-title {
       font-size: 1.8rem;
-      margin-bottom: 1.8rem;
       font-weight: 600;
       background: linear-gradient(135deg, #ff9a3c, #ff5e00);
       background-clip: text;
@@ -513,6 +547,10 @@
       }
       .resolution-badge { left: 8px; }
       .zoom-indicator { right: 8px; }
+      .step3-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
@@ -520,7 +558,10 @@
 
 <!-- 配置与上传（初始界面） -->
 <div id="step3" class="step-container active">
-  <h2 class="step-title">📸 配置摄像头 & 上传图片</h2>
+  <div class="step3-title-row">
+    <h2 class="step-title">📸 配置摄像头 & 上传图片</h2>
+    <button class="clear-all-btn" id="clearAllImagesBtn" onclick="clearAllImages()">🗑 一键清空所有图片</button>
+  </div>
   <div id="cameraGrid" class="camera-grid"></div>
   <div class="step-nav">
     <button id="step3NextBtn" onclick="goToStep4()">🚀 开始对比 →</button>
@@ -694,7 +735,6 @@
   if (state.activeCameraIndex >= state.cameras.length) state.activeCameraIndex = 0;
   if (state.pasteTargetRes !== '4k' && state.pasteTargetRes !== '1080p') state.pasteTargetRes = '4k';
 
-  // 全局校验：确保所有摄像头名称非空
   state.cameras.forEach((cam, idx) => {
     if (!cam.name || String(cam.name).trim() === '') {
       cam.name = `摄像头${idx + 1}`;
@@ -767,7 +807,6 @@
   }
 
   function goToStep4() {
-    // 校验所有摄像头名称非空
     let hasEmptyName = false;
     state.cameras.forEach((cam, idx) => {
       if (!cam.name || String(cam.name).trim() === '') {
@@ -813,6 +852,32 @@
     saveStateToStorage();
   }
 
+  // 一键清空所有图片
+  window.clearAllImages = function() {
+    let totalCount = 0;
+    state.cameras.forEach(cam => {
+      totalCount += cam.images['4k'].length + cam.images['1080p'].length;
+    });
+    if (totalCount === 0) {
+      showMessage('当前没有图片需要清空', 1200);
+      return;
+    }
+    if (!confirm(`确定要清空所有摄像头中的 ${totalCount} 张图片吗？此操作不可撤销。`)) {
+      return;
+    }
+    state.cameras.forEach(cam => {
+      ['4k', '1080p'].forEach(res => {
+        cam.images[res].forEach(img => { if (img.url) URL.revokeObjectURL(img.url); });
+        cam.images[res] = [];
+      });
+    });
+    state.uploadOrder = [];
+    saveStateToStorage();
+    renderCameraGrid();
+    checkAnyUploaded();
+    showMessage(`✅ 已清空所有 ${totalCount} 张图片`, 1500);
+  };
+
   function renderCameraGrid() {
     const grid = document.getElementById('cameraGrid');
     grid.innerHTML = '';
@@ -821,7 +886,6 @@
 
     for (let i = 0; i < state.cameras.length; i++) {
       const cam = state.cameras[i];
-      // 确保名称非空
       if (!cam.name || String(cam.name).trim() === '') {
         cam.name = `摄像头${i + 1}`;
       }
@@ -940,7 +1004,6 @@
     checkAnyUploaded();
   }
 
-  // 校验摄像头名称非空（失焦时触发）
   window.validateCameraName = function(index, inputEl) {
     const val = inputEl.value;
     if (!val || val.trim() === '') {
@@ -1036,7 +1099,6 @@
   function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
   window.updateCameraName = function(index, name) {
     if (!name || String(name).trim() === '') {
-      // 不立即更新，等失焦时统一处理
       return;
     }
     state.cameras[index].name = String(name).trim();
@@ -1126,6 +1188,9 @@
     }
     const nextBtn = document.getElementById('step3NextBtn');
     if (nextBtn) nextBtn.disabled = !hasAny;
+    // 同时更新一键清空按钮状态
+    const clearAllBtn = document.getElementById('clearAllImagesBtn');
+    if (clearAllBtn) clearAllBtn.disabled = !hasAny;
   }
 
   // ============================================================
@@ -1433,7 +1498,6 @@
 
     for (let i = 0; i < camCount; i++) {
       const camera = state.cameras[i];
-      // 确保名称非空
       if (!camera.name || String(camera.name).trim() === '') {
         camera.name = `摄像头${i + 1}`;
       }
@@ -1543,7 +1607,6 @@
   // 8. 初始化
   // ============================================================
   function initApp() {
-    // 确保初始状态名称非空
     state.cameras.forEach((cam, idx) => {
       if (!cam.name || String(cam.name).trim() === '') {
         cam.name = `摄像头${idx + 1}`;
