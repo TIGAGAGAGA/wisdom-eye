@@ -420,6 +420,27 @@
       font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
     }
 
+    /* 文件大小徽章 - 紧挨在分辨率徽章右侧 */
+    .file-size-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 130px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #aaffaa;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.8rem;
+      border-radius: 40px;
+      backdrop-filter: blur(4px);
+      border: 1px solid #88ff8844;
+      z-index: 20;
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      white-space: nowrap;
+    }
+
     .zoom-indicator {
       position: absolute;
       bottom: 12px;
@@ -540,13 +561,14 @@
       }
       .global-nav-btn { width: 44px; height: 44px; font-size: 1.4rem; }
       .column-header h3 { font-size: 1.3rem !important; }
-      .resolution-badge, .zoom-indicator {
-        font-size: 0.75rem;
-        padding: 0.15rem 0.6rem;
+      .resolution-badge, .zoom-indicator, .file-size-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
         bottom: 8px;
       }
       .resolution-badge { left: 8px; }
       .zoom-indicator { right: 8px; }
+      .file-size-badge { left: 100px; }
       .step3-title-row {
         flex-direction: column;
         align-items: flex-start;
@@ -609,8 +631,8 @@
         cameras: state.cameras.map(cam => ({
           name: cam.name,
           images: {
-            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data, seq: img.seq })),
-            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data, seq: img.seq }))
+            '4k': cam.images['4k'].map(img => ({ name: img.name, data: img.data, seq: img.seq, size: img.size })),
+            '1080p': cam.images['1080p'].map(img => ({ name: img.name, data: img.data, seq: img.seq, size: img.size }))
           }
         })),
         currentRes: state.currentRes,
@@ -639,9 +661,9 @@
                 if (item.data) {
                   const blob = base64ToBlob(item.data);
                   const url = URL.createObjectURL(blob);
-                  return { name: item.name, url, data: item.data, seq: item.seq ?? 0 };
+                  return { name: item.name, url, data: item.data, seq: item.seq ?? 0, size: item.size || 0 };
                 }
-                return { name: item.name, url: '', data: null, seq: item.seq ?? 0 };
+                return { name: item.name, url: '', data: null, seq: item.seq ?? 0, size: item.size || 0 };
               });
             } else cam.images[res] = [];
           });
@@ -716,7 +738,10 @@
     if (!cam.images['4k']) cam.images['4k'] = [];
     if (!cam.images['1080p']) cam.images['1080p'] = [];
     ['4k', '1080p'].forEach(res => {
-      cam.images[res].forEach(img => { if (typeof img.seq !== 'number') img.seq = 0; });
+      cam.images[res].forEach(img => {
+        if (typeof img.seq !== 'number') img.seq = 0;
+        if (typeof img.size !== 'number') img.size = 0;
+      });
       cam.images[res].sort((a, b) => (a.seq || 0) - (b.seq || 0));
     });
   });
@@ -1143,7 +1168,8 @@
         const base64 = await fileToBase64(file);
         const url = URL.createObjectURL(file);
         const seq = state.seqCounter++;
-        newImages.push({ name: file.name, url, data: base64, seq });
+        // 记录文件大小（字节）
+        newImages.push({ name: file.name, url, data: base64, seq, size: file.size });
         state.uploadOrder.push({ camIdx: cameraIndex, resolution, fileName: file.name, seq });
       } catch(e) { console.warn('读取失败', file.name, e); }
     }
@@ -1283,6 +1309,7 @@
       else imgEl.src = '';
       applyTransformToImage(imgEl);
       updateResolutionBadge(viewerDiv, targetImg);
+      updateFileSizeBadge(viewerDiv, targetImg);
     }
     const total = getCurrentMaxValidIndex();
     updatePageIndicator(total);
@@ -1301,6 +1328,43 @@
     const otherList = camera.images[otherRes];
     if (otherList && otherList.length) return otherList[0];
     return null;
+  }
+
+  // 格式化文件大小（字节 -> 可读字符串）
+  function formatFileSize(bytes) {
+    if (bytes === undefined || bytes === null) return '--';
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // 更新文件大小徽章
+  function updateFileSizeBadge(viewerDiv, imgItem) {
+    let badge = viewerDiv.querySelector('.file-size-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'file-size-badge';
+      viewerDiv.appendChild(badge);
+    }
+    if (!imgItem) {
+      badge.textContent = '📦 --';
+      return;
+    }
+    // 优先使用存储的 size 字段，否则尝试从 data 推算（base64 长度）
+    let size = imgItem.size;
+    if (size === undefined || size === null || size === 0) {
+      if (imgItem.data && typeof imgItem.data === 'string') {
+        // base64 近似计算: (length * 3) / 4 - padding
+        const base64Str = imgItem.data.split(',')[1] || '';
+        const padding = (base64Str.match(/=/g) || []).length;
+        size = Math.floor((base64Str.length * 3) / 4) - padding;
+      } else {
+        size = 0;
+      }
+    }
+    badge.textContent = `📦 ${formatFileSize(size)}`;
   }
 
   function updateResolutionBadge(viewerDiv, imgItem) {
@@ -1537,6 +1601,7 @@
         else imgEl.src = '';
         applyTransformToImage(imgEl);
         updateResolutionBadge(viewerDiv, targetImg);
+        updateFileSizeBadge(viewerDiv, targetImg);
       }
       const total = getCurrentMaxValidIndex();
       updatePageIndicator(total);
